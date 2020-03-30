@@ -1,5 +1,5 @@
 CC=gcc
-FLAGS=-fopenmp
+FLAGS=-fopenmp -lm
 
 IMG_FOLDER=img
 EXECUTABLE=blur-effect
@@ -19,7 +19,7 @@ prepare:
 	-@mkdir $(EXECUTABLEDIR)
 
 $(OBJECTS): $(OBJDIR)/%.o: $(SOURCEDIR)/%.c | $(OBJDIR)
-	$(CC) -c $< -o $@ $(FLAGS)
+	$(CC) -Wall -pedantic -c $< -o $@ $(FLAGS)
 
 $(OBJDIR):
 	-@mkdir $(OBJDIR)
