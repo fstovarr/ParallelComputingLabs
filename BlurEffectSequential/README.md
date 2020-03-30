@@ -14,3 +14,4 @@ make # Build the project and create executable in /bin
 - `src`: Source code
 - `bin`: Executable folder
 - `obj`: C objects folder
+- `lib`: Libraries
