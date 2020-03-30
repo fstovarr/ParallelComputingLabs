@@ -5,6 +5,10 @@
 ```
 make
 ./bin/blur-effect
+
+# Make options
+make clean # Delete objects folder
+make fullclean # Delete objects and bin folder
 ```
 
 ## Folder structure
