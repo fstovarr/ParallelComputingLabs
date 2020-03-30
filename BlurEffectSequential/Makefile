@@ -14,7 +14,7 @@ OBJECTS := $(SOURCES:$(SOURCEDIR)/%.c=$(OBJDIR)/%.o)
 
 .PHONY: all prepare clean fullclean
 
-all: prepare $(EXECUTABLE)
+all: prepare $(EXECUTABLE) clean
 
 prepare:
 	-@mkdir $(EXECUTABLEDIR)

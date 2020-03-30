@@ -16,7 +16,7 @@ int main() {
     if (data == NULL) {
         printf("Error loading the image");
     } else {
-        printf("Image loaded: Width %dpx, Height %dpx and %d channels\n", x, y, n);
+        printf("Image dimensions: (%dpx, %dpx) and %d channels\n", x, y, n);
 
         printf("Iterating over the array: ");
         for (int i = 0; i < 10; i++)
