@@ -20,7 +20,7 @@ int main() {
         unsigned char *grey_image = malloc(width * height * 1) ;
 
         printf("Iterating over the array: ");
-        for (int i = 0, j = 0; i < size - 4; i += 3, j++) {
+        for (int i = 0, j = 0; i < size; i += 3, j++) {
             grey_image[j] = (data[i] + data[i + 1] + data[i + 2]) / 3.0;
         }
 
