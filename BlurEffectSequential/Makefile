@@ -5,6 +5,7 @@ IMG_FOLDER=img
 EXECUTABLE=blur-effect
 
 EXECUTABLEDIR := bin
+OUTPUTDIR := out
 SOURCEDIR := src
 OBJDIR := obj
 
@@ -17,15 +18,16 @@ all: prepare $(EXECUTABLE)
 
 prepare:
 	-@mkdir $(EXECUTABLEDIR)
+	-@mkdir $(OUTPUTDIR)
 
 $(OBJECTS): $(OBJDIR)/%.o: $(SOURCEDIR)/%.c | $(OBJDIR)
-	$(CC) -Wall -pedantic -c $< -o $@ $(FLAGS)
+	$(CC) -Wall -pedantic -c $< -o $@
 
 $(OBJDIR):
 	-@mkdir $(OBJDIR)
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CC) -o $(EXECUTABLEDIR)/$(EXECUTABLE) $^
+	$(CC) -o $(EXECUTABLEDIR)/$(EXECUTABLE) $^ $(FLAGS)
 
 fullclean: clean
 	-rm -R $(EXECUTABLEDIR)

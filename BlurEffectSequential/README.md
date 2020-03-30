@@ -15,3 +15,4 @@ make # Build the project and create executable in /bin
 - `bin`: Executable folder
 - `obj`: C objects folder
 - `lib`: Libraries
+- `out`: Output folder
