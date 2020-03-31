@@ -26,11 +26,7 @@ void generateGaussianKernel(double* k, int size) {
             res = (double)((1 / (two_sigma_sq * M_PI)) * exp(-r * r / two_sigma_sq));
             memcpy(k + idx, &res, sizeof(res));
             sum += *(k + idx);
-            // printf("(%f %d)", *(k + idx), idx);
         }
-        // printf("\n");
-
-    // printf("SUM %f \n", sum);
 
     for (int x = 0; x < size; x++)
         for (int y = 0; y < size; y++) {
@@ -41,12 +37,13 @@ void generateGaussianKernel(double* k, int size) {
 
 void calculatePixel(unsigned char *in, unsigned char *out, int i, int w, int h, int channels, double* kernel, int kernel_size) {
     int kernel_pad = kernel_size / 2;
+    double v = 0.0;
 
     for (int l = 0; l < channels; l++) {
         double total = 0.0;
         for (int m = -kernel_pad; m <= kernel_pad; m++)
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
-                double v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));
+                v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));
                 total += v * in[(i + l) + (m + kernel_pad) * channels + (n + kernel_pad) * channels];
             }
 
@@ -104,6 +101,8 @@ int main(int argc, char *argv[]) {
         applyFilter(data, output_image, width, height, channels, kernel, KERNEL_SIZE);
 
         stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels);
+
+        free(output_image);
     } else {
         printf("Error loading the image");
     }
