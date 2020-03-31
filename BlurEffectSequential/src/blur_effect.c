@@ -92,9 +92,16 @@ int main(int argc, char *argv[]) {
         printf("Image dimensions: (%dpx, %dpx) and %d channels.\n", width, height, channels);
         
         unsigned char *output_image = malloc(width * height * channels);
+        if(output_image == NULL) {
+            printf("Error trying to allocate memory space");
+            free(output_image);
+            stbi_image_free(data);
+            return -1;
+        }
         applyFilter(data, output_image, width, height, channels, kernel, KERNEL_SIZE);
 
-        stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels);
+        if(!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
+            printf("Image cannot be created");
 
         free(output_image);
     } else {
