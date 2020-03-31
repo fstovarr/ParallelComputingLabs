@@ -3,8 +3,7 @@
 ## Build and run
 
 ```
-make
-./bin/blur-effect
+make && ./bin/blur-effect img/favicon.png out/testing.png 3
 
 # Make options
 make clean # Delete objects folder

@@ -7,9 +7,9 @@
 #include "../lib/stb/stb_image_write.h"
 
 // #define DIR_IMG_INPUT "img/favicon.png"
-#define DIR_IMG_INPUT "img/test.png"
+char *DIR_IMG_INPUT = "img/test.png";
 // #define DIR_IMG_INPUT "img/test2.jpg"
-#define DIR_IMG_OUTPUT "out/out_test.png"
+char *DIR_IMG_OUTPUT = "out/out_test.png";
 
 void generateGaussianKernel(double* k, int size) {
     double sigma = 1.0;
@@ -69,8 +69,18 @@ void applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, dou
                 out[i + j] = 0;
 }
 
-int main() {
-    int KERNEL_SIZE = 3;
+int main(int argc, char *argv[]) {
+    if(argc != 4) {
+        printf("Wrong arguments!\n");
+        return -1;
+    }
+    
+    int KERNEL_SIZE = (*argv[3]) - '0';
+    DIR_IMG_INPUT = argv[1];
+    DIR_IMG_OUTPUT = argv[2];
+
+    printf("%s %s %d\n", DIR_IMG_INPUT, DIR_IMG_OUTPUT, KERNEL_SIZE);
+
     double kernel[KERNEL_SIZE][KERNEL_SIZE];
     generateGaussianKernel(kernel, KERNEL_SIZE);
 
