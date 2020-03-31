@@ -7,8 +7,8 @@
 #include "../lib/stb/stb_image_write.h"
 
 // #define DIR_IMG_INPUT "img/favicon.png"
-#define DIR_IMG_INPUT "img/test2.jpg"
-#define DIR_IMG_OUTPUT "out/out_test.jpg"
+#define DIR_IMG_INPUT "img/test.png"
+#define DIR_IMG_OUTPUT "out/out_test.png"
 
 const int kernel_pad = 2;
 const double kernel[5][5] = { 
@@ -39,10 +39,10 @@ void calculatePixel(unsigned char *in, unsigned char *out, int i, int w, int h, 
 void applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c) {
     size_t size = w * h * c;
     for (int i = 0; i < size; i += c)
-        if(i > kernel_pad * w * c && 
-            i < (size - kernel_pad * w * c) && 
-            i % (w * c) >= kernel_pad && 
-            i % (w * c) != (kernel_pad * w * c - c))
+        if(i > kernel_pad * w * c && // Top
+            i < (size - kernel_pad * w * c) && // Bottom
+            i % (w * c) > kernel_pad * c && // Left
+            i % (w * c) < (w * c - kernel_pad * c)) // Right
             calculatePixel(in, out, i, w, h, c);
         else
             for (int j = 0; j < c; j++)
@@ -55,7 +55,6 @@ int main() {
     channels = 3;
 
     if (data != NULL) {
-        size_t size = width * height * 3;
         printf("Image dimensions: (%dpx, %dpx) and %d channels.\n", width, height, channels);
 
         unsigned char *output_image = malloc(width * height * channels);
