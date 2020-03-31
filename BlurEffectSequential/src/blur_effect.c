@@ -6,8 +6,9 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../lib/stb/stb_image_write.h"
 
+// http://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
 void generateGaussianKernel(double* k, int size) {
-    double sigma = 1.0;
+    double sigma = 15.0;
     double two_sigma_sq = 2 * sigma * sigma;
 
     double sum = 0.0;
@@ -17,8 +18,8 @@ void generateGaussianKernel(double* k, int size) {
     for (int x = -mid_size; x <= mid_size; x++) 
         for (int y = -mid_size; y <= mid_size; y++) {
             int idx = (x + mid_size) * size + y + mid_size;
-            double r = sqrt(x * x + y * y);
-            res = (double)((1 / (two_sigma_sq * M_PI)) * exp(-r * r / two_sigma_sq));
+            // double r = sqrt();
+            res = (double)(exp(-(x * x + y * y) / two_sigma_sq) / (two_sigma_sq * M_PI));
             memcpy(k + idx, &res, sizeof(res));
             sum += *(k + idx);
         }
