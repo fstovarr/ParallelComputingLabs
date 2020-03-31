@@ -6,6 +6,11 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+unsigned char m3 = {
+  1,1,1,
+  1,1,1,
+  1,1,1
+};
 
 unsigned char *blurPx(unsigned char *mat, int k){
   unsigned char *px = (unsigned char *)malloc(sizeof(unsigned char) * 3);
@@ -43,16 +48,16 @@ int main(int argc, char **argv) {
       unsigned char *mat = (unsigned char *)malloc(sizeof(unsigned char) * k * k * 3);
       
       for(id = 0; id < img_size ; id += 3){
-        yy = ((id / 3) % y) - ((k - 1) / 2);
-        xx = ((id / 3) / y) - ((k - 1) / 2);
+        yy = ((id / 3) / x) - ((k - 1) / 2);
+        xx = ((id / 3) % x) - ((k - 1) / 2);
         
         for(i = 0; i < k; i++){
           for(j = 0; j < k; j++) {
-            id_mat = (j * k + i) * 3;
-            if(yy + i < 0 || yy + i >= y || xx + j < 0 || xx + j >= x){
+            id_mat = (i * k + j) * 3;
+            if(yy + j < 0 || yy + j >= y || xx + i < 0 || xx + i >= x){
               mat[id_mat] = mat[id_mat + 1] = mat[id_mat + 2] = 0;
             } else {
-              decoded = ((xx + j) * y * 3) + ((yy + i) * 3);
+              decoded = ((yy + j) * x * 3) + ((xx + i) * 3);
               mat[id_mat] = data[decoded];
               mat[id_mat + 1] = data[decoded + 1];
               mat[id_mat + 2] = data[decoded + 2];
@@ -64,7 +69,6 @@ int main(int argc, char **argv) {
         temp_img[id] = px[0];
         temp_img[id + 1] = px[1];
         temp_img[id + 2] = px[2];
-        printf("%03d %03d %03d -- %03d %03d %03d\n",temp_img[id], temp_img[id + 1], temp_img[id + 2], data[id], data[id + 1], data[id + 2]);
       }
 
       if (!stbi_write_png(out_path, x, y, channels, temp_img, x * channels)){
