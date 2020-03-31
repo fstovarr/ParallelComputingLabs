@@ -6,11 +6,6 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../lib/stb/stb_image_write.h"
 
-// #define DIR_IMG_INPUT "img/favicon.png"
-char *DIR_IMG_INPUT = "img/test.png";
-// #define DIR_IMG_INPUT "img/test2.jpg"
-char *DIR_IMG_OUTPUT = "out/out_test.png";
-
 void generateGaussianKernel(double* k, int size) {
     double sigma = 1.0;
     double two_sigma_sq = 2 * sigma * sigma;
@@ -37,10 +32,10 @@ void generateGaussianKernel(double* k, int size) {
 
 void calculatePixel(unsigned char *in, unsigned char *out, int i, int w, int h, int channels, double* kernel, int kernel_size) {
     int kernel_pad = kernel_size / 2;
-    double v = 0.0;
+    double v = 0.0, total = 0.0;
 
     for (int l = 0; l < channels; l++) {
-        double total = 0.0;
+        total = 0.0;
         for (int m = -kernel_pad; m <= kernel_pad; m++)
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
                 v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));
@@ -71,12 +66,10 @@ int main(int argc, char *argv[]) {
         printf("Wrong arguments!\n");
         return -1;
     }
-    
-    int KERNEL_SIZE = (*argv[3]) - '0';
-    DIR_IMG_INPUT = argv[1];
-    DIR_IMG_OUTPUT = argv[2];
 
-    printf("%s %s %d\n", DIR_IMG_INPUT, DIR_IMG_OUTPUT, KERNEL_SIZE);
+    char *DIR_IMG_INPUT = argv[1];
+    char *DIR_IMG_OUTPUT = argv[2];
+    int KERNEL_SIZE = (*argv[3]) - '0';
 
     double kernel[KERNEL_SIZE][KERNEL_SIZE];
     generateGaussianKernel(kernel, KERNEL_SIZE);
