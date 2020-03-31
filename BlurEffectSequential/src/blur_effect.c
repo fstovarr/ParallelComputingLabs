@@ -6,21 +6,24 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-unsigned char m3 = {
-  1,1,1,
-  1,1,1,
-  1,1,1
+unsigned char m3[] = {
+  1,2,1,
+  2,4,2,
+  1,2,1
 };
 
-unsigned char *blurPx(unsigned char *mat, int k){
-  unsigned char *px = (unsigned char *)malloc(sizeof(unsigned char) * 3);
-  px[0] = px[1] = px[2] = 0;
-  int i, id, k2 = k*k;
+unsigned char *blurPx(unsigned char *mat, int k, int channels){
+  unsigned char *px = (unsigned char *)malloc(sizeof(unsigned char) * channels);
+  int i, j, id, k2 = k*k;
+  for (i = 0; i < channels; i ++){
+    px[i] = 0;
+  }
+  
   for(i = 0; i < k2; i++) {
     id = i*k;
-    px[0] += mat[id]/9;
-    px[1] += mat[id + 1]/9;
-    px[2] += mat[id + 2]/9;
+    for (j = 0; j < channels; j ++){
+      px[j] += (mat[id + j] * m3[i]) /16;
+    }
   }
   return px;
 }
@@ -44,31 +47,31 @@ int main(int argc, char **argv) {
       printf("Couldn't allocate space");
     } else {
       
-      int id, id_mat, i, j, xx, yy, decoded;
-      unsigned char *mat = (unsigned char *)malloc(sizeof(unsigned char) * k * k * 3);
+      int id, id_mat, i, j, l, xx, yy, decoded;
+      unsigned char *mat = (unsigned char *)malloc(sizeof(unsigned char) * k * k * channels);
       
-      for(id = 0; id < img_size ; id += 3){
-        yy = ((id / 3) / x) - ((k - 1) / 2);
-        xx = ((id / 3) % x) - ((k - 1) / 2);
+      for(id = 0; id < img_size ; id += channels){
+        yy = ((id / channels) / x) - ((k - 1) / 2);
+        xx = ((id / channels) % x) - ((k - 1) / 2);
         
         for(i = 0; i < k; i++){
           for(j = 0; j < k; j++) {
-            id_mat = (i * k + j) * 3;
+            id_mat = (i * k + j) * channels;
             if(yy + j < 0 || yy + j >= y || xx + i < 0 || xx + i >= x){
               mat[id_mat] = mat[id_mat + 1] = mat[id_mat + 2] = 0;
             } else {
-              decoded = ((yy + j) * x * 3) + ((xx + i) * 3);
-              mat[id_mat] = data[decoded];
-              mat[id_mat + 1] = data[decoded + 1];
-              mat[id_mat + 2] = data[decoded + 2];
+              decoded = ((yy + j) * x * channels) + ((xx + i) * channels);
+              for(l = 0;l < channels; l++){
+                mat[id_mat + l] = data[decoded + l];
+              }
             }
           }
         }
         
-        unsigned char *px = blurPx(mat, k);
-        temp_img[id] = px[0];
-        temp_img[id + 1] = px[1];
-        temp_img[id + 2] = px[2];
+        unsigned char *px = blurPx(mat, k, channels);
+        for(l = 0; l < channels; l++){
+          temp_img[id + l] = px[l];
+        }
       }
 
       if (!stbi_write_png(out_path, x, y, channels, temp_img, x * channels)){
