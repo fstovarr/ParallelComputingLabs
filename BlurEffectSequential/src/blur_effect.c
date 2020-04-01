@@ -8,9 +8,9 @@
 
 // http://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
 void generateGaussianKernel(double* k, int size) {
-    // double sigma = (size - 1) / 6;
-    double sigma = 30;
-    double two_sigma_sq = 2 * sigma * sigma;
+    double sigma = (size - 1.0) / 6.0;    
+    // double sigma = 30;
+    double two_sigma_sq = 2.0 * sigma * sigma;
 
     double sum = 0.0;
     double res = 0.0;
@@ -71,7 +71,8 @@ int main(int argc, char *argv[]) {
 
     char *DIR_IMG_INPUT = argv[1];
     char *DIR_IMG_OUTPUT = argv[2];
-    int KERNEL_SIZE = (*argv[3]) - '0';
+    int KERNEL_SIZE = 3;
+    sscanf(argv[3], "%d", &KERNEL_SIZE);
 
     double kernel[KERNEL_SIZE][KERNEL_SIZE];
     generateGaussianKernel(kernel, KERNEL_SIZE);
