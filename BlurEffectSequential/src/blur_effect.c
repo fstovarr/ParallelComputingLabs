@@ -8,7 +8,7 @@
 
 
 void generateGaussianKernel(double *k, int size) {
-    double sigma = 2.0;
+    double sigma = 1.5;
     double two_sigma_sq = 2 * sigma * sigma;
 
     double sum = 0.0;
