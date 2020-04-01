@@ -8,7 +8,8 @@
 
 // http://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
 void generateGaussianKernel(double* k, int size) {
-    double sigma = 15.0;
+    // double sigma = (size - 1) / 6;
+    double sigma = 30;
     double two_sigma_sq = 2 * sigma * sigma;
 
     double sum = 0.0;
@@ -98,6 +99,7 @@ int main(int argc, char *argv[]) {
             stbi_image_free(data);
             return -1;
         }
+        
         applyFilter(data, output_image, width, height, channels, kernel, KERNEL_SIZE);
 
         if(!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
