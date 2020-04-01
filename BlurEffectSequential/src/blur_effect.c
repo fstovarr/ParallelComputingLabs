@@ -53,14 +53,15 @@ void applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, dou
     size_t size = w * h * c;
 
     for (int i = 0; i < size; i += c)
-        if(i > kernel_pad * w * c && // Top
-            i < (size - kernel_pad * w * c) && // Bottom
-            i % (w * c) >= kernel_pad * c && // Left
-            i % (w * c) < (w * c - kernel_pad * c)) // Right
-            calculatePixel(in, out, i, w, h, c, kernel, kernel_size);
-        else
-            for (int j = 0; j < c; j++)
-                out[i + j] = 0;
+        calculatePixel(in, out, i, w, h, c, kernel, kernel_size);
+        // if(i > kernel_pad * w * c && // Top
+        //     i < (size - kernel_pad * w * c) && // Bottom
+        //     i % (w * c) >= kernel_pad * c && // Left
+        //     i % (w * c) < (w * c - kernel_pad * c)) // Right
+        //     calculatePixel(in, out, i, w, h, c, kernel, kernel_size);
+        // else
+        //     for (int j = 0; j < c; j++)
+        //         out[i + j] = 0;
 }
 
 int main(int argc, char *argv[]) {
