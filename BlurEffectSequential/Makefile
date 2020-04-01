@@ -21,7 +21,7 @@ prepare:
 	-@mkdir $(OUTPUTDIR)
 
 $(OBJECTS): $(OBJDIR)/%.o: $(SOURCEDIR)/%.c | $(OBJDIR)
-	$(CC) -Wall -pedantic -c $< -o $@
+	$(CC) -Wall -pedantic -lpthread -c $< -o $@
 
 $(OBJDIR):
 	-@mkdir $(OBJDIR)

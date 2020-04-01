@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <pthread.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "../lib/stb/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -42,26 +43,68 @@ void calculatePixel(unsigned char *in, unsigned char *out, int i, int w, int h, 
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
                 v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));
                 total += v * in[(i + l) +  (m * w * channels) + (n * channels )];
-                //total += v * in[(i + l) + (m + kernel_pad) * channels + (n + kernel_pad) * channels];
             }
-
         out[i + l] = total;
     }
 }
 
-void applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, double* kernel, int kernel_size) {
-    int kernel_pad = kernel_size / 2;
-    size_t size = w * h * c;
 
-    for (int i = 0; i < size; i += c)
-        if(i >= kernel_pad * w * c && // Top
-            i < (size - kernel_pad * w * c) && // Bottom
-            i % (w * c) >= kernel_pad * c && // Left
-            i % (w * c) < (w * c - kernel_pad * c)) // Right
-            calculatePixel(in, out, i, w, h, c, kernel, kernel_size);
-        else
-            for (int j = 0; j < c; j++)
-                out[i + j] = 0;
+#define H 4
+struct args
+{
+  unsigned char * in;
+  unsigned char * out;
+  int w;
+  int h;
+  int c;
+  double *kernel;
+  int kernel_size;
+  int thread_id;
+} arg[H];
+
+void applyFilter( struct args * data )
+{
+  unsigned char * in = data->in;
+  unsigned char * out = data->out;
+  int w = data->w;
+  int h = data->h;
+  int c = data->c;
+  double * kernel = data->kernel;
+  int kernel_size = data->kernel_size;
+
+  int thread_id = data->thread_id;
+
+  int kernel_pad = kernel_size / 2;
+  size_t size = w * h * c;
+
+  int delta = w * h / H;//iterations for each thread
+
+  int iter = delta;
+  if( thread_id == H - 1 )
+    iter = w * h - ( H - 1 ) * delta;
+
+  int beg = delta * thread_id;
+  for( int it = 0, i = beg; it < iter; ++ it, i += c )
+  {
+      if(i >= kernel_pad * w * c && // Top
+          i < (size - kernel_pad * w * c) && // Bottom
+          i % (w * c) >= kernel_pad * c && // Left
+          i % (w * c) < (w * c - kernel_pad * c)) // Right
+          calculatePixel(in, out, i, w, h, c, kernel, kernel_size);
+      else
+          for (int j = 0; j < c; j++)
+              out[i + j] = 0;
+   }
+}
+
+pthread_t idThread[H];
+void * run( void * ap )
+{
+  struct args * data  = (struct args*)ap;
+  applyFilter( data );
+  int thread_id = data->thread_id;
+  printf("Success %d\n", thread_id );
+  return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -75,7 +118,7 @@ int main(int argc, char *argv[]) {
     int KERNEL_SIZE = 3;
     sscanf(argv[3], "%d", &KERNEL_SIZE);
 
-    double kernel[KERNEL_SIZE][KERNEL_SIZE];
+    double kernel[KERNEL_SIZE*KERNEL_SIZE];
     generateGaussianKernel(kernel, KERNEL_SIZE);
 
     // Print kernel
@@ -102,7 +145,23 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         
-        applyFilter(data, output_image, width, height, channels, kernel, KERNEL_SIZE);
+        //paralelization to apply filter using blockwise processing distribution
+
+        for( int i = 0; i < H; ++ i )
+        {
+          arg[i].in = data;
+          arg[i].out = output_image;
+          arg[i].w = width;
+          arg[i].h = height;
+          arg[i].c = channels;
+          arg[i].kernel = kernel;
+          arg[i].kernel_size = KERNEL_SIZE;
+          arg[i].thread_id = i;
+          pthread_create(&idThread[i], NULL, run, (void*)&arg[i] );
+        }
+
+        for( int i = 0; i < H; ++ i )
+          pthread_join( idThread[i], NULL );
 
         if(!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
             printf("Image cannot be created");
@@ -113,4 +172,6 @@ int main(int argc, char *argv[]) {
     }
 
     stbi_image_free(data);
+    pthread_exit( 0 ); 
+    return 0;
 }
