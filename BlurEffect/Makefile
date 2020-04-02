@@ -1,10 +1,11 @@
 CC=gcc
-FLAGS=-fopenmp
+FLAGS=-fopenmp -lm
 
 IMG_FOLDER=img
 EXECUTABLE=blur-effect
 
 EXECUTABLEDIR := bin
+OUTPUTDIR := out
 SOURCEDIR := src
 OBJDIR := obj
 
@@ -13,19 +14,20 @@ OBJECTS := $(SOURCES:$(SOURCEDIR)/%.c=$(OBJDIR)/%.o)
 
 .PHONY: all prepare clean fullclean
 
-all: prepare $(EXECUTABLE)
+all: prepare $(EXECUTABLE) clean
 
 prepare:
 	-@mkdir $(EXECUTABLEDIR)
+	-@mkdir $(OUTPUTDIR)
 
 $(OBJECTS): $(OBJDIR)/%.o: $(SOURCEDIR)/%.c | $(OBJDIR)
-	$(CC) -c $< -o $@ $(FLAGS)
+	$(CC) -Wall -pedantic -c $< -o $@
 
 $(OBJDIR):
 	-@mkdir $(OBJDIR)
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CC) -o $(EXECUTABLEDIR)/$(EXECUTABLE) $^
+	$(CC) -o $(EXECUTABLEDIR)/$(EXECUTABLE) $^ $(FLAGS)
 
 fullclean: clean
 	-rm -R $(EXECUTABLEDIR)
