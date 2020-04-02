@@ -15,18 +15,20 @@
 struct tpool;
 typedef struct tpool tpool_t;
 
-typedef void (*thread_func_t)(void *arg);
+struct func_params;
+typedef struct func_params func_params_t;
 
 tpool_t *tpool_create(size_t num);
 void tpool_destroy(tpool_t *tm);
 
-bool tpool_add_work(tpool_t *tm, thread_func_t func, void *arg);
+bool tpool_add_work(tpool_t *tm, void *arg);
 void tpool_wait(tpool_t *tm);
+
+void *parallelFunction(void *args);
 
 
 // -------------- WORK QUEUE.  - linked list ------------
 struct tpool_work {
-  thread_func_t      func; // FUNCTION TO CALL
   void              *arg; // ARGS
   struct tpool_work *next; // NEXT ELEMENT
 };
@@ -47,14 +49,10 @@ struct tpool {
 
 
 // -------------- HELPERS to create/destroy work objects --------------
-static tpool_work_t *tpool_work_create(thread_func_t func, void *arg) {
+static tpool_work_t *tpool_work_create(void *arg) {
   tpool_work_t *work;
 
-    if (func == NULL)
-      return NULL;
-
   work = malloc(sizeof(*work));
-  work->func = func;
   work->arg = arg;
   work->next = NULL;
   return work;
@@ -110,7 +108,7 @@ static void *tpool_worker(void *arg) {
     // << end pull
 
     if (work != NULL) {
-      work->func(work->arg);
+      parallelFunction(work->arg);
       tpool_work_destroy(work);
     }
 
@@ -186,13 +184,13 @@ void tpool_destroy(tpool_t *tm) {
 }
 
 // enqueue work
-bool tpool_add_work(tpool_t *tm, thread_func_t func, void *arg) {
+bool tpool_add_work(tpool_t *tm, void *arg) {
   tpool_work_t *work;
 
   if (tm == NULL)
     return false;
 
-  work = tpool_work_create(func, arg);
+  work = tpool_work_create(arg);
   if (work == NULL)
     return false;
 
@@ -230,7 +228,7 @@ void tpool_wait(tpool_t *tm)
 }
 
 
-// -------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 
 struct func_params {
   unsigned char *in;
@@ -240,7 +238,22 @@ struct func_params {
   int kernel_size;
   int from, to;
 };
-typedef struct func_params func_params_t;
+
+func_params_t *createParams(unsigned char *in, unsigned char *out, int w, int h, int c, double *kernel, int kernel_size, int from, int to){
+  func_params_t *args; 
+  args = calloc(1,sizeof(*args));
+  args->in = in;
+  args->out = out;
+  args->w = w;
+  args->h = h;
+  args->channels = c;
+  args->kernel = kernel;
+  args->kernel_size = kernel_size;
+  args->from = from;
+  args->to = to;
+  return args;
+}
+
 
 // http://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
 void generateGaussianKernel(double *k, int size) {
@@ -308,22 +321,6 @@ void *parallelFunction(void *args){
   return NULL;
 }
 
-
-func_params_t *createParams(unsigned char *in, unsigned char *out, int w, int h, int c, double *kernel, int kernel_size, int from, int to){
-  func_params_t *args; 
-  args = calloc(1,sizeof(*args));
-  args->in = in;
-  args->out = out;
-  args->w = w;
-  args->h = h;
-  args->channels = c;
-  args->kernel = kernel;
-  args->kernel_size = kernel_size;
-  args->from = from;
-  args->to = to;
-  return args;
-}
-
 int applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, double *kernel, int kernel_size, int bucket_size, int num_threads){
   //input, output, width, height, channels, kernels, kernel_size
   size_t size = w * h;
@@ -337,14 +334,13 @@ int applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, doub
 
   for (i = bucket_size; i < size; i += bucket_size){
     func_params_t *args = createParams(in, out, w, h, c, kernel, kernel_size, (i - bucket_size) * c ,i * c);
-    tpool_add_work(tm, parallelFunction, args);
-    //parallelFunction(in, out, w, h, c, kernel, kernel_size, (i - bucket_size) * c ,i * c);
+    tpool_add_work(tm, args);
   }
-
-  if(i + bucket_size > size){
-    func_params_t *args = createParams(in, out, w, h, c, kernel, kernel_size, i * c, size);
-    tpool_add_work(tm, parallelFunction, args);
-    //parallelFunction(in, out, w, h, c, kernel, kernel_size, i * c, size);
+  
+  //last case
+  if(i >= size){
+    func_params_t *args = createParams(in, out, w, h, c, kernel, kernel_size, (i-bucket_size)*c , size*c);
+    tpool_add_work(tm, args);
   }
 
   tpool_wait(tm);
@@ -364,7 +360,7 @@ int main(int argc, char **argv){
   char *DIR_IMG_OUTPUT = argv[2];
   int KERNEL_SIZE = atoi(argv[3]);
   int N_THREADS = atoi(argv[4]);
-  int bucket_size = 100;
+  int bucket_size = 164000;
 
   double kernel[KERNEL_SIZE][KERNEL_SIZE];
   generateGaussianKernel(kernel, KERNEL_SIZE);
