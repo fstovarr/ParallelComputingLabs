@@ -10,6 +10,8 @@
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
+#define SIGMA 15
+
 struct Args {
     int id;
     int chunk_size;
@@ -25,8 +27,7 @@ struct Args {
 
 // http://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
 void generateGaussianKernel(double* k, int size) {
-    // double sigma = (size - 1) / 6.0;    
-    double sigma = 30;
+    double sigma = SIGMA;
     double two_sigma_sq = 2.0 * sigma * sigma;
 
     double sum = 0.0;
@@ -36,7 +37,6 @@ void generateGaussianKernel(double* k, int size) {
     for (int x = -mid_size; x <= mid_size; x++) 
         for (int y = -mid_size; y <= mid_size; y++) {
             int idx = (x + mid_size) * size + y + mid_size;
-            // double r = sqrt();
             res = (double)(exp(-(x * x + y * y) / two_sigma_sq) / (two_sigma_sq * M_PI));
             memcpy(k + idx, &res, sizeof(res));
             sum += *(k + idx);
@@ -58,7 +58,6 @@ void calculatePixel(unsigned char *in, unsigned char *out, long long int i, int 
         for (int m = -kernel_pad; m <= kernel_pad; m++)
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
                 v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));
-                // total += v * in[(i + l) + (m + kernel_pad) * channels + (n + kernel_pad) * channels];
                 total += v * in[(i + l) +  (m * w * channels) + (n * channels)];
             }
 
@@ -99,13 +98,12 @@ void *processImage(void *arg) {
 
     for (long long int start = id * chunk_size; start < size; start += threads * chunk_size) {
         end = MIN(start + chunk_size, size);
-        printf("%d (%lld, %lld)\n", id, start, end);
         applyFilter(in, out, start, end, w, h, c, kernel, kernel_size);
     }
 }
 
 int main(int argc, char *argv[]) {
-    if(argc != 5) {
+    if(argc < 5) {
         printf("Wrong arguments!\n");
         return -1;
     }
@@ -125,6 +123,12 @@ int main(int argc, char *argv[]) {
     int THREADS = 4;
     sscanf(argv[4], "%d", &THREADS);
 
+    int verbose = argv[5];
+    if(argv[5] == 0)
+        verbose = 0;
+    else
+        sscanf(argv[5], "%d", &verbose);
+
     double kernel[KERNEL_SIZE][KERNEL_SIZE];
     generateGaussianKernel(kernel, KERNEL_SIZE);
 
@@ -133,7 +137,7 @@ int main(int argc, char *argv[]) {
     data = stbi_load(DIR_IMG_INPUT, &width, &height, &channels, STBI_default);
 
     if (data != NULL) {
-        printf("Image dimensions: (%dpx, %dpx) and %d channels.\n", width, height, channels);
+        if(verbose) printf("\nImage dimensions: (%dpx, %dpx) and %d channels.\n", width, height, channels);
         
         output_image = malloc(width * height * channels);
         if(output_image == NULL) {
@@ -144,7 +148,10 @@ int main(int argc, char *argv[]) {
         }
         
         pthread_t *threads = calloc(THREADS, sizeof(pthread_t));
-        int chunk = width * height / (THREADS * 10);
+
+        int chunk = 1;
+        // int chunk = width * height / (THREADS * 10);
+        // int chunk = width * height / (THREADS);
 
         struct Args *template = (struct Args *) calloc(THREADS, sizeof(struct Args));
 
@@ -168,7 +175,7 @@ int main(int argc, char *argv[]) {
         if (!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
             printf("Image cannot be created");
         else
-            printf("Image created");
+            if(verbose) printf("Image created");
 
         free(template);
         free(threads);
@@ -179,7 +186,10 @@ int main(int argc, char *argv[]) {
 
     gettimeofday(&after, NULL);
     timersub(&after, &before, &result);
-    printf("\nTime elapsed: %ld.%06ld\n", (long int) result.tv_sec, (long int) result.tv_usec);
+
+    if(verbose) printf("\nTime elapsed: %ld.%06ld\n", (long int) result.tv_sec, (long int) result.tv_usec);
+    else
+        printf("%ld.%06ld\n", (long int)result.tv_sec, (long int)result.tv_usec);
 
     stbi_image_free(data);
 }

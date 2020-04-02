@@ -7,10 +7,12 @@
 #include "../lib/stb/stb_image_write.h"
 #include <sys/time.h>
 
+#define SIGMA 15
+
 // http://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
 void generateGaussianKernel(double* k, int size) {
-    double sigma = (size - 1) / 6.0;    
-    // double sigma = 30;
+    // double sigma = (size - 1) / 6.0;    
+    double sigma = SIGMA;
     double two_sigma_sq = 2.0 * sigma * sigma;
 
     double sum = 0.0;
@@ -42,7 +44,6 @@ void calculatePixel(unsigned char *in, unsigned char *out, int i, int w, int h, 
         for (int m = -kernel_pad; m <= kernel_pad; m++)
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
                 v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));
-                // total += v * in[(i + l) + (m + kernel_pad) * channels + (n + kernel_pad) * channels];
                 total += v * in[(i + l) +  (m * w * channels) + (n * channels )];
             }
 
@@ -52,11 +53,11 @@ void calculatePixel(unsigned char *in, unsigned char *out, int i, int w, int h, 
 
 void applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, double* kernel, int kernel_size) {
     int kernel_pad = kernel_size / 2;
-    size_t size = w * h * c;
+    size_t size = w * h;
 
-    for (int i = 0; i < size; i += c)
+    for (long long int i = 0; i < size * c; i += c)
         if(i > kernel_pad * w * c && // Top
-            i < (size - kernel_pad * w * c) && // Bottom
+            i < (size * c - kernel_pad * w * c) && // Bottom
             i % (w * c) >= kernel_pad * c && // Left
             i % (w * c) < (w * c - kernel_pad * c)) // Right
             calculatePixel(in, out, i, w, h, c, kernel, kernel_size);
@@ -81,16 +82,6 @@ int main(int argc, char *argv[]) {
 
     double kernel[KERNEL_SIZE][KERNEL_SIZE];
     generateGaussianKernel(kernel, KERNEL_SIZE);
-
-    // Print kernel
-
-    // for (int i = 0; i < KERNEL_SIZE; i++) {
-    //     for (int j = 0; j < KERNEL_SIZE; j++)
-    //         printf("%f ", t[i][j]);
-    //     printf("\n");
-    // }
-
-    // printf("\n");
 
     int width, height, channels;
     unsigned char *data = stbi_load(DIR_IMG_INPUT, &width, &height, &channels, STBI_default);
