@@ -18,8 +18,8 @@ struct Args {
     int threads;
     unsigned char *in;
     unsigned char *out;
-    int w;
-    int h;
+    long long int w;
+    long long int h;
     int c;
     double* kernel;
     int kernel_size;
@@ -52,7 +52,7 @@ void generateGaussianKernel(double* k, int size) {
         }
 }
 
-void calculatePixel(int i, int w, int h, int channels, double* kernel, int kernel_size) {
+void calculatePixel(long long int i, long long int w, long long int h, int channels, double* kernel, int kernel_size) {
     int kernel_pad = kernel_size / 2;
     double v = 0.0, total = 0.0;
 
@@ -62,20 +62,20 @@ void calculatePixel(int i, int w, int h, int channels, double* kernel, int kerne
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
                 v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));
                 // total += v * in[(i + l) + (m + kernel_pad) * channels + (n + kernel_pad) * channels];
-                total += v * data[(i + l) +  (m * w * channels) + (n * channels )];
+                total += v * data[(i + l) +  (m * w * channels) + (n * channels)];
             }
 
         output_image[i + l] = total;
     }
 }
 
-void applyFilter(int w, int h, int c, double* kernel, int kernel_size, int start, int end) {
+void applyFilter(long long int w, long long int h, int c, double* kernel, int kernel_size, long long int start, long long int end) {
     int kernel_pad = kernel_size / 2;
-    size_t size = w * h * c;
+    size_t size = w * h;
 
-    for (int i = start; i < end; i += c)
+    for (long long int i = start * c; i < end * c; i += c)
         if(i > kernel_pad * w * c && // Top
-            i < (size - kernel_pad * w * c) && // Bottom
+            i < (size * c - kernel_pad * w * c) && // Bottom
             i % (w * c) >= kernel_pad * c && // Left
             i % (w * c) < (w * c - kernel_pad * c)) // Right
             calculatePixel(i, w, h, c, kernel, kernel_size);
@@ -90,29 +90,22 @@ void *processImage(void *arg) {
     int id = args->id;
     int chunk_size = args->chunk_size;
     int threads = args->threads;
-    int w = args->w;
-    int h = args->h;
+    long long int w = args->w;
+    long long int h = args->h;
     int c = args->c;
     int kernel_size = args->kernel_size;
     double* kernel = args->kernel;
 
-    size_t size = w * h * c;
+    size_t size = w * h;
     int end;
 
-    // printf("SIZE: %d ", size);
 
-    int *b = args->he;
-    double step = size / threads;
-
-    // printf("Hilo %d | %d\n", id, b[id]);
-    applyFilter(w, h, c, kernel, kernel_size, id * step, (id + 1) * step);
-
-    // for (int start = id * chunk_size * c; start < size; start += threads * chunk_size * c) {
-    //     end = MIN(start + threads * chunk_size * c, size);
-    //     // memcpy(args->he + id + 1, args->he + id, sizeof(int));
-    //     // printf("Hilo %d (%d, %d) \n", id, start, end);
-    //     applyFilter(w, h, c, kernel, kernel_size, start, end);
-    // }
+    for (int start = id * chunk_size; start < size; start += threads * chunk_size) {
+        end = MIN(start + chunk_size, size);
+        // memcpy(args->he + id + 1, args->he + id, sizeof(int));
+        // printf("Hilo %d (%d, %d) \n", id, start, end);
+        applyFilter(w, h, c, kernel, kernel_size, start, end);
+    }
 
     // printf("END %d", id);
 }
@@ -168,17 +161,17 @@ int main(int argc, char *argv[]) {
         pthread_t *threads = calloc(THREADS, sizeof(pthread_t));
         int count[THREADS];
 
+        int chunk = width * height / (THREADS * 10);
+
         for (int i = 0; i < THREADS; i++) {
             count[i] = 0;
             struct Args *template = (struct Args *)malloc(sizeof(struct Args));
-            template->chunk_size = 6;
+            template->chunk_size = chunk;
             template->threads = THREADS;
             template->w = width;
             template->h = height;
             template->c = channels;
             template->kernel_size = KERNEL_SIZE;
-            // template->out = output_image;
-            // template->in = data;
             template->kernel = kernel;
             template->id = i;
             template->he = count;
@@ -187,11 +180,6 @@ int main(int argc, char *argv[]) {
 
         for (int i = 0; i < THREADS; i++) 
             pthread_join(threads[i], NULL);
-
-        // printf("\n");
-
-        for (int i = 0; i < THREADS; i++)
-            printf("%d ", count[i]);
 
         if (!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
             printf("Image cannot be created");
