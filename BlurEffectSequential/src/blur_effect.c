@@ -6,8 +6,6 @@
 #include "../lib/stb/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../lib/stb/stb_image_write.h"
-#include <sys/time.h>
-
 
 // http://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
 void generateGaussianKernel(double* k, int size) {
@@ -51,7 +49,6 @@ void calculatePixel(unsigned char *in, unsigned char *out, int i, int w, int h, 
 }
 
 
-#define H 4
 struct args
 {
   unsigned char * in;
@@ -62,7 +59,8 @@ struct args
   double *kernel;
   int kernel_size;
   int thread_id;
-} arg[H];
+  int number_of_threads;
+};
 
 void applyFilter( struct args * data )
 {
@@ -75,17 +73,18 @@ void applyFilter( struct args * data )
   int kernel_size = data->kernel_size;
 
   int thread_id = data->thread_id;
+  int number_of_threads = data->number_of_threads;
 
   int kernel_pad = kernel_size / 2;
   size_t size = w * h * c;
 
-  int delta = w * h / H;//iterations for each thread
+  int delta = w * h / number_of_threads;//iterations for each thread
 
   int iter = delta;
-  if( thread_id == H - 1 )
-    iter = w * h - ( H - 1 ) * delta;
+  if( thread_id == number_of_threads - 1 )
+    iter = w * h - ( number_of_threads - 1 ) * delta;
 
-  int beg = delta * thread_id;
+  int beg = delta * thread_id * c;
   for( int it = 0, i = beg; it < iter; ++ it, i += c )
   {
       if(i >= kernel_pad * w * c && // Top
@@ -99,7 +98,6 @@ void applyFilter( struct args * data )
    }
 }
 
-pthread_t idThread[H];
 void * run( void * ap )
 {
   struct args * data  = (struct args*)ap;
@@ -110,18 +108,17 @@ void * run( void * ap )
 }
 
 int main(int argc, char *argv[]) {
-    if(argc != 4) {
+    if(argc != 5) {
         printf("Wrong arguments!\n");
         return -1;
     }
 
-    struct timeval after, before, result;
-    gettimeofday(&before, NULL);
-
     char *DIR_IMG_INPUT = argv[1];
     char *DIR_IMG_OUTPUT = argv[2];
     int KERNEL_SIZE = 3;
+    int NUMBER_OF_THREADS = 4;
     sscanf(argv[3], "%d", &KERNEL_SIZE);
+    sscanf(argv[4], "%d", &NUMBER_OF_THREADS );
 
     double kernel[KERNEL_SIZE*KERNEL_SIZE];
     generateGaussianKernel(kernel, KERNEL_SIZE);
@@ -152,7 +149,9 @@ int main(int argc, char *argv[]) {
         
         //paralelization to apply filter using blockwise processing distribution
 
-        for( int i = 0; i < H; ++ i )
+        pthread_t idThread[NUMBER_OF_THREADS];
+        struct args arg[NUMBER_OF_THREADS];
+        for( int i = 0; i < NUMBER_OF_THREADS; ++ i )
         {
           arg[i].in = data;
           arg[i].out = output_image;
@@ -162,10 +161,11 @@ int main(int argc, char *argv[]) {
           arg[i].kernel = kernel;
           arg[i].kernel_size = KERNEL_SIZE;
           arg[i].thread_id = i;
+          arg[i].number_of_threads = NUMBER_OF_THREADS;
           pthread_create(&idThread[i], NULL, run, (void*)&arg[i] );
         }
 
-        for( int i = 0; i < H; ++ i )
+        for( int i = 0; i < NUMBER_OF_THREADS; ++ i )
           pthread_join( idThread[i], NULL );
 
         if(!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
@@ -175,10 +175,6 @@ int main(int argc, char *argv[]) {
     } else {
         printf("Error loading the image");
     }
-
-    gettimeofday(&after, NULL);
-    timersub(&after, &before, &result);
-    printf("\nTime elapsed: %ld.%06ld\n", (long int) result.tv_sec, (long int) result.tv_usec);
 
     stbi_image_free(data);
     pthread_exit( 0 ); 
