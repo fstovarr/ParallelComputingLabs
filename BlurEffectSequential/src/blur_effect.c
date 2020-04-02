@@ -10,9 +10,9 @@
 #define SIGMA 15
 
 // http://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
-void generateGaussianKernel(double* k, int size) {
+void generateGaussianKernel(double* k, int size, double sigma) {
     // double sigma = (size - 1) / 6.0;    
-    double sigma = SIGMA;
+    // double sigma = SIGMA;
     double two_sigma_sq = 2.0 * sigma * sigma;
 
     double sum = 0.0;
@@ -67,7 +67,7 @@ void applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, dou
 }
 
 int main(int argc, char *argv[]) {
-    if(argc != 4) {
+    if(argc < 4) {
         printf("Wrong arguments!\n");
         return -1;
     }
@@ -80,14 +80,21 @@ int main(int argc, char *argv[]) {
     int KERNEL_SIZE = 3;
     sscanf(argv[3], "%d", &KERNEL_SIZE);
 
+    int verbose;
+    if(argv[5] == 0) verbose = 0;
+    else sscanf(argv[5], "%d", &verbose);
+
+    int sigma = SIGMA;
+    if(argv[4] != 0) sscanf(argv[4], "%d", &sigma);
+
     double kernel[KERNEL_SIZE][KERNEL_SIZE];
-    generateGaussianKernel(kernel, KERNEL_SIZE);
+    generateGaussianKernel((double *) &kernel, KERNEL_SIZE, sigma);
 
     int width, height, channels;
     unsigned char *data = stbi_load(DIR_IMG_INPUT, &width, &height, &channels, STBI_default);
 
     if (data != NULL) {
-        printf("Image dimensions: (%dpx, %dpx) and %d channels.\n", width, height, channels);
+        if(verbose) printf("Image dimensions: (%dpx, %dpx) and %d channels.\n", width, height, channels);
         
         unsigned char *output_image = malloc(width * height * channels);
         if(output_image == NULL) {
@@ -97,7 +104,7 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         
-        applyFilter(data, output_image, width, height, channels, kernel, KERNEL_SIZE);
+        applyFilter(data, output_image, width, height, channels, (double *) &kernel, KERNEL_SIZE);
 
         if(!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
             printf("Image cannot be created");
@@ -109,7 +116,8 @@ int main(int argc, char *argv[]) {
 
     gettimeofday(&after, NULL);
     timersub(&after, &before, &result);
-    printf("\nTime elapsed: %ld.%06ld\n", (long int) result.tv_sec, (long int) result.tv_usec);
+    if(verbose) printf("\nTime elapsed: %ld.%06ld\n", (long int) result.tv_sec, (long int) result.tv_usec);
+    else printf("%ld.%06ld\n", (long int)result.tv_sec, (long int)result.tv_usec);
 
     stbi_image_free(data);
 }

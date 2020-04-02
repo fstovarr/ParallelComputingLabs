@@ -26,8 +26,7 @@ struct Args {
 };
 
 // http://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
-void generateGaussianKernel(double* k, int size) {
-    double sigma = SIGMA;
+void generateGaussianKernel(double* k, int size, double sigma) {
     double two_sigma_sq = 2.0 * sigma * sigma;
 
     double sum = 0.0;
@@ -80,7 +79,7 @@ void applyFilter(unsigned char *in, unsigned char *out, long long int start, lon
                 out[i + j] = 0;
 }
 
-void *processImage(void *arg) {
+void processImage(void *arg) {
     struct Args *args = arg;
     int id = args->id;
     int chunk_size = args->chunk_size;
@@ -123,14 +122,15 @@ int main(int argc, char *argv[]) {
     int THREADS = 4;
     sscanf(argv[4], "%d", &THREADS);
 
-    int verbose = argv[5];
-    if(argv[5] == 0)
-        verbose = 0;
-    else
-        sscanf(argv[5], "%d", &verbose);
+    int verbose;
+    if(argv[6] == 0) verbose = 0;
+    else sscanf(argv[6], "%d", &verbose);
+
+    int sigma = SIGMA;
+    if(argv[5] != 0) sscanf(argv[5], "%d", &sigma);
 
     double kernel[KERNEL_SIZE][KERNEL_SIZE];
-    generateGaussianKernel(kernel, KERNEL_SIZE);
+    generateGaussianKernel((double *) &kernel, KERNEL_SIZE, sigma);
 
     unsigned char *data, *output_image;
     int width, height, channels;
@@ -163,10 +163,10 @@ int main(int argc, char *argv[]) {
             (template + i)->h = height;
             (template + i)->c = channels;
             (template + i)->kernel_size = KERNEL_SIZE;
-            (template + i)->kernel = kernel;
+            (template + i)->kernel = (double *) &kernel;
             (template + i)->in = data;
             (template + i)->out = output_image;
-            pthread_create(&threads[i], NULL, &processImage, (template + i));
+            pthread_create(&threads[i], NULL, (void * (*)(void *)) processImage, (template + i));
         }
 
         for (int i = 0; i < THREADS; i++) 

@@ -32,6 +32,7 @@ $(EXECUTABLE): $(OBJECTS)
 fullclean: clean
 	-rm -R $(EXECUTABLEDIR)
 	-rm -R $(OBJDIR)
+	-rm -R $(OUTPUTDIR)
 
 clean:
 	-rm -R $(OBJDIR)
