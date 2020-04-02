@@ -6,9 +6,9 @@
 #include <math.h>
 #include <stdlib.h>
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "../lib/stb/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+#include "../lib/stb/stb_image_write.h"
 
 // Pool based on https://nachtimwald.com/2019/04/12/thread-pool-in-c/
 
@@ -324,7 +324,7 @@ void *parallelFunction(void *args){
 int applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, double *kernel, int kernel_size, int bucket_size, int num_threads){
   //input, output, width, height, channels, kernels, kernel_size
   size_t size = w * h;
-  if(bucket_size >= w * h || bucket_size <=0) bucket_size = 1; // default  
+  if(bucket_size >= w*h || bucket_size <=0) bucket_size = 1; // default  
 
   tpool_t *tm;
   int i;
@@ -334,12 +334,14 @@ int applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, doub
 
   for (i = bucket_size; i < size; i += bucket_size){
     func_params_t *args = createParams(in, out, w, h, c, kernel, kernel_size, (i - bucket_size) * c ,i * c);
+    //printf("%d - %d\n", i-bucket_size,i);
     tpool_add_work(tm, args);
   }
   
   //last case
   if(i >= size){
     func_params_t *args = createParams(in, out, w, h, c, kernel, kernel_size, (i-bucket_size)*c , size*c);
+    //printf("%d - %d\n", i,size);
     tpool_add_work(tm, args);
   }
 
@@ -360,7 +362,7 @@ int main(int argc, char **argv){
   char *DIR_IMG_OUTPUT = argv[2];
   int KERNEL_SIZE = atoi(argv[3]);
   int N_THREADS = atoi(argv[4]);
-  int bucket_size = 164000;
+  int bucket_size = 255;
 
   double kernel[KERNEL_SIZE][KERNEL_SIZE];
   generateGaussianKernel(kernel, KERNEL_SIZE);
