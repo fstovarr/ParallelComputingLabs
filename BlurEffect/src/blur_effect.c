@@ -102,9 +102,10 @@ void *processImage(void *arg) {
     // printf("SIZE: %d ", size);
 
     int *b = args->he;
+    double step = size / threads;
 
     // printf("Hilo %d | %d\n", id, b[id]);
-    applyFilter(w, h, c, kernel, kernel_size, id * chunk_size * c, size/threads);
+    applyFilter(w, h, c, kernel, kernel_size, id * step, (id + 1) * step);
 
     // for (int start = id * chunk_size * c; start < size; start += threads * chunk_size * c) {
     //     end = MIN(start + threads * chunk_size * c, size);
