@@ -120,14 +120,17 @@ int main(int argc, char *argv[]) {
     }
 
     int THREADS = 4;
-    sscanf(argv[4], "%f", &THREADS);
-
-    int verbose;
-    if(argv[6] == 0) verbose = 0;
-    else sscanf(argv[6], "%d", &verbose);
+    sscanf(argv[4], "%d", &THREADS);
 
     double sigma = SIGMA;
-    if(argv[5] != 0) sscanf(argv[5], "%d", &sigma);
+    if(argv[5] != 0) sscanf(argv[5], "%lf", &sigma);
+
+    int verbose;
+    if(argv[6] != NULL) {
+        sscanf(argv[6], "%d", &verbose);
+        if(verbose != 1)
+            verbose = 0;
+    }
 
     double kernel[KERNEL_SIZE][KERNEL_SIZE];
     generateGaussianKernel((double *) &kernel, KERNEL_SIZE, sigma);

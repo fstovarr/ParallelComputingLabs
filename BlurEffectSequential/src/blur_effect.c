@@ -81,11 +81,14 @@ int main(int argc, char *argv[]) {
     sscanf(argv[3], "%d", &KERNEL_SIZE);
 
     int verbose;
-    if(argv[5] == 0) verbose = 0;
-    else sscanf(argv[5], "%d", &verbose);
+    if(argv[5] != NULL) {
+        sscanf(argv[5], "%d", &verbose);
+        if(verbose != 1)
+            verbose = 0;
+    }
 
     double sigma = SIGMA;
-    if(argv[4] != 0) sscanf(argv[4], "%f", &sigma);
+    if(argv[4] != 0) sscanf(argv[4], "%lf", &sigma);
 
     double kernel[KERNEL_SIZE][KERNEL_SIZE];
     generateGaussianKernel((double *) &kernel, KERNEL_SIZE, sigma);
