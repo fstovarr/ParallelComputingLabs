@@ -1,5 +1,5 @@
 CC=gcc
-FLAGS=-fopenmp -lm
+FLAGS=-lm -lpthread
 
 IMG_FOLDER=img
 EXECUTABLE=blur-effect
@@ -27,7 +27,7 @@ $(OBJDIR):
 	-@mkdir $(OBJDIR)
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CC) -o $(EXECUTABLEDIR)/$(EXECUTABLE) $^ $(FLAGS)
+	$(CC) -pg -o $(EXECUTABLEDIR)/$(EXECUTABLE) $^ $(FLAGS)
 
 fullclean: clean
 	-rm -R $(EXECUTABLEDIR)

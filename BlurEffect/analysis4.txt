@@ -1,0 +1,53 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  Ts/call  Ts/call  name    
+ 91.03      6.39     6.39                             calculatePixel
+  1.85      6.52     0.13                             stbi_zlib_compress
+  1.71      6.64     0.12                             stbiw__zlib_countm
+  1.00      6.71     0.07                             applyFilter
+  1.00      6.78     0.07                             stbiw__encode_png_line
+  0.71      6.83     0.05                             stbi_write_png_to_mem
+  0.71      6.88     0.05                             stbiw__paeth
+  0.57      6.92     0.04                             stbi__idct_simd
+  0.43      6.95     0.03                             stbiw__zhash
+  0.28      6.97     0.02                             stbi__jpeg_decode_block
+  0.21      6.99     0.02                             stbiw__zlib_bitrev
+  0.14      7.00     0.01                             stbi__YCbCr_to_RGB_simd
+  0.14      7.01     0.01                             stbi__resample_row_hv_2_simd
+  0.14      7.02     0.01                             stbiw__crc32
+  0.07      7.02     0.01                             stbiw__zlib_flushf
+
+ %         the percentage of the total running time of the
+time       program used by this function.
+
+cumulative a running sum of the number of seconds accounted
+ seconds   for by this function and those listed above it.
+
+ self      the number of seconds accounted for by this
+seconds    function alone.  This is the major sort for this
+           listing.
+
+calls      the number of times this function was invoked, if
+           this function is profiled, else blank.
+
+ self      the average number of milliseconds spent in this
+ms/call    function per call, if this function is profiled,
+	   else blank.
+
+ total     the average number of milliseconds spent in this
+ms/call    function and its descendents per call, if this
+	   function is profiled, else blank.
+
+name       the name of the function.  This is the minor sort
+           for this listing. The index shows the location of
+	   the function in the gprof listing. If the index is
+	   in parenthesis it shows where it would appear in
+	   the gprof listing if it were to be printed.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
