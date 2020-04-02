@@ -152,8 +152,8 @@ int main(int argc, char *argv[]) {
         
         pthread_t *threads = calloc(THREADS, sizeof(pthread_t));
 
-        int chunk = 1;
-        // int chunk = width * height / (THREADS * 10);
+        // int chunk = 1;
+        int chunk = width * height / (THREADS * 10);
         // int chunk = width * height / (THREADS);
 
         struct Args *template = (struct Args *) calloc(THREADS, sizeof(struct Args));
