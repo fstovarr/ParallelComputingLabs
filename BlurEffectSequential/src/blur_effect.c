@@ -8,7 +8,7 @@
 
 // http://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
 void generateGaussianKernel(double* k, int size) {
-    double sigma = (size - 1.0) / 6.0;    
+    double sigma = (size - 1) / 6.0;    
     // double sigma = 30;
     double two_sigma_sq = 2.0 * sigma * sigma;
 
@@ -41,7 +41,8 @@ void calculatePixel(unsigned char *in, unsigned char *out, int i, int w, int h, 
         for (int m = -kernel_pad; m <= kernel_pad; m++)
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
                 v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));
-                total += v * in[(i + l) + (m + kernel_pad) * channels + (n + kernel_pad) * channels];
+                // total += v * in[(i + l) + (m + kernel_pad) * channels + (n + kernel_pad) * channels];
+                total += v * in[(i + l) +  (m * w * channels) + (n * channels )];
             }
 
         out[i + l] = total;
@@ -53,15 +54,14 @@ void applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, dou
     size_t size = w * h * c;
 
     for (int i = 0; i < size; i += c)
-        calculatePixel(in, out, i, w, h, c, kernel, kernel_size);
-        // if(i > kernel_pad * w * c && // Top
-        //     i < (size - kernel_pad * w * c) && // Bottom
-        //     i % (w * c) >= kernel_pad * c && // Left
-        //     i % (w * c) < (w * c - kernel_pad * c)) // Right
-        //     calculatePixel(in, out, i, w, h, c, kernel, kernel_size);
-        // else
-        //     for (int j = 0; j < c; j++)
-        //         out[i + j] = 0;
+        if(i > kernel_pad * w * c && // Top
+            i < (size - kernel_pad * w * c) && // Bottom
+            i % (w * c) >= kernel_pad * c && // Left
+            i % (w * c) < (w * c - kernel_pad * c)) // Right
+            calculatePixel(in, out, i, w, h, c, kernel, kernel_size);
+        else
+            for (int j = 0; j < c; j++)
+                out[i + j] = 0;
 }
 
 int main(int argc, char *argv[]) {
