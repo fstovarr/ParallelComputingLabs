@@ -120,13 +120,13 @@ int main(int argc, char *argv[]) {
     }
 
     int THREADS = 4;
-    sscanf(argv[4], "%d", &THREADS);
+    sscanf(argv[4], "%f", &THREADS);
 
     int verbose;
     if(argv[6] == 0) verbose = 0;
     else sscanf(argv[6], "%d", &verbose);
 
-    int sigma = SIGMA;
+    double sigma = SIGMA;
     if(argv[5] != 0) sscanf(argv[5], "%d", &sigma);
 
     double kernel[KERNEL_SIZE][KERNEL_SIZE];
