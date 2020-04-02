@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include<sys/time.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include "../lib/stb/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -357,6 +358,8 @@ int main(int argc, char **argv){
     printf("Wrong arguments \n");
     return -1;
   }
+  struct timeval after, before, result;
+  gettimeofday(&before, NULL);
 
   char *DIR_IMG_INPUT = argv[1];
   char *DIR_IMG_OUTPUT = argv[2];
@@ -389,5 +392,12 @@ int main(int argc, char **argv){
     printf("Error loading the image");
   }
 
+  gettimeofday(&after, NULL);
+  timersub(&after, &before, &result);
+
+  FILE *results;
+  results = fopen("out.out", "a");
+  fprintf(results,"%ld.%06ld\n", (long int) result.tv_sec, (long int) result.tv_usec);
+  fclose(results);
   stbi_image_free(data);
 }
