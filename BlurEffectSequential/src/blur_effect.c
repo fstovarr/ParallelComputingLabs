@@ -8,7 +8,7 @@
 
 
 void generateGaussianKernel(double *k, int size) {
-    double sigma = 1.5;
+    double sigma = 2;
     double two_sigma_sq = 2 * sigma * sigma;
 
     double sum = 0.0;
@@ -53,8 +53,7 @@ int main(int argc, char **argv) {
   char *in_path = argv[1], *out_path = argv[2];
 
   int x,y, channels;
-  unsigned char *data = stbi_load(in_path, &x, &y, &channels, 3);
-  
+  unsigned char *data = stbi_load(in_path, &x, &y, &channels, 0);
   if (data == NULL) {
     printf("Error loading the image");
   } else {
