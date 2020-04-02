@@ -20,6 +20,7 @@ struct Args {
     int c;
     double* kernel;
     int kernel_size;
+    int *he;
 };
 
 // http://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
@@ -99,13 +100,19 @@ void *processImage(void *arg) {
 
     // printf("SIZE: %d ", size);
 
+    int *b = args->he;
+
+    // printf("Hilo %d | %d\n", id, b[id]);
+
     for (int start = id * chunk_size * c; start < size; start += threads * chunk_size * c) {
         end = MIN(start + threads * chunk_size * c, size);
+        // memcpy(args->he + id + 1, args->he + id, sizeof(int));
+        args->he[id]++;
         // printf("Hilo %d (%d, %d) \n", id, start, end);
         applyFilter(in, out, w, h, c, kernel, kernel_size, start, end);
     }
 
-    printf("END %d", id);
+    // printf("END %d", id);
 }
 
 int main(int argc, char *argv[]) {
@@ -154,27 +161,32 @@ int main(int argc, char *argv[]) {
         }
         
         pthread_t *threads = calloc(THREADS, sizeof(pthread_t));
-
-        struct Args *template = (struct Args *) malloc(sizeof(struct Args));
-        template->chunk_size = 16;
-        template->threads = THREADS;
-        template->w = width;
-        template->h = height;
-        template->c = channels;
-        template->kernel_size = KERNEL_SIZE;
-        template->out = output_image;
-        template->in = data;
-        template->kernel = kernel;
+        int count[THREADS];
 
         for (int i = 0; i < THREADS; i++) {
-            struct Args args;
-            args = *template;
-            args.id = i;
-            pthread_create(&threads[i], NULL, &processImage, &args);
+            count[i] = 0;
+            struct Args *template = (struct Args *)malloc(sizeof(struct Args));
+            template->chunk_size = 492000;
+            template->threads = THREADS;
+            template->w = width;
+            template->h = height;
+            template->c = channels;
+            template->kernel_size = KERNEL_SIZE;
+            template->out = output_image;
+            template->in = data;
+            template->kernel = kernel;
+            template->id = i;
+            template->he = count;
+            pthread_create(&threads[i], NULL, &processImage, template);
         }
 
         for (int i = 0; i < THREADS; i++) 
             pthread_join(threads[i], NULL);
+
+        // printf("\n");
+
+        // for (int i = 0; i < THREADS; i++)
+        //     printf("%d ", count[i]);
 
         if (!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
             printf("Image cannot be created");
