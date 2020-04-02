@@ -5,6 +5,7 @@
 #include "../lib/stb/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../lib/stb/stb_image_write.h"
+#include <sys/time.h>
 
 // http://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
 void generateGaussianKernel(double* k, int size) {
@@ -70,6 +71,9 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    struct timeval after, before, result;
+    gettimeofday(&before, NULL);
+
     char *DIR_IMG_INPUT = argv[1];
     char *DIR_IMG_OUTPUT = argv[2];
     int KERNEL_SIZE = 3;
@@ -111,6 +115,10 @@ int main(int argc, char *argv[]) {
     } else {
         printf("Error loading the image");
     }
+
+    gettimeofday(&after, NULL);
+    timersub(&after, &before, &result);
+    printf("\nTime elapsed: %ld.%06ld\n", (long int) result.tv_sec, (long int) result.tv_usec);
 
     stbi_image_free(data);
 }
