@@ -6,6 +6,7 @@
 #include "../lib/stb/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../lib/stb/stb_image_write.h"
+#include <sys/time.h>
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
@@ -103,13 +104,14 @@ void *processImage(void *arg) {
     int *b = args->he;
 
     // printf("Hilo %d | %d\n", id, b[id]);
+    applyFilter(w, h, c, kernel, kernel_size, id * chunk_size * c, size/threads);
 
-    for (int start = id * chunk_size * c; start < size; start += threads * chunk_size * c) {
-        end = MIN(start + threads * chunk_size * c, size);
-        // memcpy(args->he + id + 1, args->he + id, sizeof(int));
-        // printf("Hilo %d (%d, %d) \n", id, start, end);
-        applyFilter(w, h, c, kernel, kernel_size, start, end);
-    }
+    // for (int start = id * chunk_size * c; start < size; start += threads * chunk_size * c) {
+    //     end = MIN(start + threads * chunk_size * c, size);
+    //     // memcpy(args->he + id + 1, args->he + id, sizeof(int));
+    //     // printf("Hilo %d (%d, %d) \n", id, start, end);
+    //     applyFilter(w, h, c, kernel, kernel_size, start, end);
+    // }
 
     // printf("END %d", id);
 }
@@ -119,6 +121,9 @@ int main(int argc, char *argv[]) {
         printf("Wrong arguments!\n");
         return -1;
     }
+
+    struct timeval after, before, result;
+    gettimeofday(&before, NULL);
 
     char *DIR_IMG_INPUT = argv[1];
     char *DIR_IMG_OUTPUT = argv[2];
@@ -198,6 +203,10 @@ int main(int argc, char *argv[]) {
     } else {
         printf("Error loading the image");
     }
+
+    gettimeofday(&after, NULL);
+    timersub(&after, &before, &result);
+    printf("\nTime elapsed: %ld.%06ld\n", (long int) result.tv_sec, (long int) result.tv_usec);
 
     stbi_image_free(data);
 }
