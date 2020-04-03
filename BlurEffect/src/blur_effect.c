@@ -49,7 +49,7 @@ void generateGaussianKernel(double* k, int size, double sigma) {
 }
 
 void calculatePixel(unsigned char *in, unsigned char *out, long long int i, int w, int h, int channels, double* kernel, int kernel_size) {
-    int kernel_pad = kernel_size / 2;
+    int kernel_pad = kernel_size / 2, idx;
     double v = 0.0, total = 0.0;
 
     for (int l = 0; l < channels; l++) {
@@ -57,9 +57,9 @@ void calculatePixel(unsigned char *in, unsigned char *out, long long int i, int 
         for (int m = -kernel_pad; m <= kernel_pad; m++)
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
                 v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));
-                total += v * in[(i + l) +  (m * w * channels) + (n * channels)];
+                idx = (i + l) + (m * w * channels) + (n * channels);
+                total += v * ((idx < 0 || idx > w * h * channels) ? 1 : in[idx]);
             }
-
         out[i + l] = total;
     }
 }
@@ -69,14 +69,12 @@ void applyFilter(unsigned char *in, unsigned char *out, long long int start, lon
     size_t size = w * h;
 
     for (long long int i = start * c; i < end * c; i += c)
-        if(i > kernel_pad * w * c && // Top
-            i < (size * c - kernel_pad * w * c) && // Bottom
-            i % (w * c) >= kernel_pad * c && // Left
-            i % (w * c) < (w * c - kernel_pad * c)) // Right
+        // if(i > kernel_pad * w * c && // Top
+        //     i < (size * c - kernel_pad * w * c) && // Bottom
+        //     i % (w * c) >= kernel_pad * c && // Left
+        //     i % (w * c) < (w * c - kernel_pad * c)) // Right
             calculatePixel(in, out, i, w, h, c, kernel, kernel_size);
-        else
-            for (int j = 0; j < c; j++)
-                out[i + j] = 0;
+        // else calculateCorner(in, out, i, w, h, c, kernel, kernel_size);
 }
 
 void processImage(void *arg) {
@@ -152,9 +150,12 @@ int main(int argc, char *argv[]) {
         
         pthread_t *threads = calloc(THREADS, sizeof(pthread_t));
 
-        // int chunk = 1;
+        // int chunk = 64;
         int chunk = width * height / (THREADS * 10);
         // int chunk = width * height / (THREADS);
+
+        printf("%d\n", sizeof(unsigned char));
+        // printf("%d\n", sizeof(double));
 
         struct Args *template = (struct Args *) calloc(THREADS, sizeof(struct Args));
 
