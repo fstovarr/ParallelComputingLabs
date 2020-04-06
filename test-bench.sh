@@ -3,6 +3,7 @@
 # 3: output_folder_path - Where to place the generated images
 # 4: The output file where the times are stored
 # Example: ./test-bench.sh BlurEffect/bin/blur-effect img/test720.jpg BlurEffect/out out.out
+# IF THIS DOES NOT RUN. MAKE sure to use bash test-bench.sh instead
 
 ITERATIONS=5
 
