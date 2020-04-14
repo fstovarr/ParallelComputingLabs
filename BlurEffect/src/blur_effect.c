@@ -23,10 +23,11 @@ struct Args {
     int c;
     double* kernel;
     int kernel_size;
+    double *mean;
 };
 
 // http://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
-void generateGaussianKernel(double* k, int size, double sigma) {
+void generateGaussianKernel(double* k, int size, double sigma, double *mean) {
     double two_sigma_sq = 2.0 * sigma * sigma;
 
     double sum = 0.0;
@@ -46,6 +47,9 @@ void generateGaussianKernel(double* k, int size, double sigma) {
             res = *(k + x * size + y) / sum;
             memcpy(k + x * size + y, &res, sizeof(res));
         }
+
+    double tmp_mean = sum / size;
+    memcpy(mean, &tmp_mean, sizeof(double));
 }
 
 void calculatePixel(unsigned char *in, unsigned char *out, long long int i, int w, int h, int channels, double* kernel, int kernel_size) {
@@ -57,24 +61,27 @@ void calculatePixel(unsigned char *in, unsigned char *out, long long int i, int 
         for (int m = -kernel_pad; m <= kernel_pad; m++)
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
                 v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));
-                idx = (i + l) + (m * w * channels) + (n * channels);
-                total += v * ((idx < 0 || idx > w * h * channels) ? 1 : in[idx]);
+                idx = ((i + l) + (m * w * channels) + (n * channels)) % (w * h * channels);
+                total += v * (in[idx]);
             }
         out[i + l] = total;
     }
 }
 
-void applyFilter(unsigned char *in, unsigned char *out, long long int start, long long int end, int w, int h, int c, double* kernel, int kernel_size) {
+void applyFilter(unsigned char *in, unsigned char *out, long long int start, long long int end, int w, int h, int c, double* kernel, int kernel_size, double *kernel_mean) {
     int kernel_pad = kernel_size / 2;
     size_t size = w * h;
+    double tmp = 0.0;
 
     for (long long int i = start * c; i < end * c; i += c)
-        // if(i > kernel_pad * w * c && // Top
-        //     i < (size * c - kernel_pad * w * c) && // Bottom
-        //     i % (w * c) >= kernel_pad * c && // Left
-        //     i % (w * c) < (w * c - kernel_pad * c)) // Right
+        if(i >= kernel_pad * w * c && // Top
+            i < (size * c - kernel_pad * w * c) && // Bottom
+            i % (w * c) >= kernel_pad * c && // Left
+            i % (w * c) < (w * c - kernel_pad * c)) // Right
             calculatePixel(in, out, i, w, h, c, kernel, kernel_size);
-        // else calculateCorner(in, out, i, w, h, c, kernel, kernel_size);
+        else 
+            for (int j = 0; j < c; j++) 
+                out[i + j] = 0;
 }
 
 void processImage(void *arg) {
@@ -89,13 +96,14 @@ void processImage(void *arg) {
     double* kernel = args->kernel;
     unsigned char *in = args->in;
     unsigned char *out = args->out;
+    double *mean = args->mean;
 
     size_t size = w * h;
     long long int end;
 
     for (long long int start = id * chunk_size; start < size; start += threads * chunk_size) {
         end = MIN(start + chunk_size, size);
-        applyFilter(in, out, start, end, w, h, c, kernel, kernel_size);
+        applyFilter(in, out, start, end, w, h, c, kernel, kernel_size, mean);
     }
 }
 
@@ -131,9 +139,16 @@ int main(int argc, char *argv[]) {
     }
 
     double kernel[KERNEL_SIZE][KERNEL_SIZE];
-    generateGaussianKernel((double *) &kernel, KERNEL_SIZE, sigma);
+    double mean = 0.0;
+    generateGaussianKernel((double *)&kernel, KERNEL_SIZE, sigma, &mean);
 
-    unsigned char *data, *output_image;
+    // for (int i = 0; i < KERNEL_SIZE; i++) {
+    //     for (int j = 0; j < KERNEL_SIZE; j++)
+    //         printf("%f ", kernel[i][j]);
+    //     printf("\n");
+    // }
+
+        unsigned char *data, *output_image;
     int width, height, channels;
     data = stbi_load(DIR_IMG_INPUT, &width, &height, &channels, STBI_default);
 
@@ -153,8 +168,6 @@ int main(int argc, char *argv[]) {
         // int chunk = 64;
         int chunk = width * height / (THREADS * 10);
         // int chunk = width * height / (THREADS);
-
-        printf("%d\n", sizeof(unsigned char));
         // printf("%d\n", sizeof(double));
 
         struct Args *template = (struct Args *) calloc(THREADS, sizeof(struct Args));
@@ -170,7 +183,8 @@ int main(int argc, char *argv[]) {
             (template + i)->kernel = (double *) &kernel;
             (template + i)->in = data;
             (template + i)->out = output_image;
-            pthread_create(&threads[i], NULL, (void * (*)(void *)) processImage, (template + i));
+            (template + i)->mean = &mean;
+            pthread_create(&threads[i], NULL, (void *(*)(void *))processImage, (template + i));
         }
 
         for (int i = 0; i < THREADS; i++) 

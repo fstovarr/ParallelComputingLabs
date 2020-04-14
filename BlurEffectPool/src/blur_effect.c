@@ -293,9 +293,7 @@ void calculatePixel(unsigned char *in, unsigned char *out, int i, int w, int h, 
       for (int n = -kernel_pad; n <= kernel_pad; n++){
         v = *(kernel + (m + kernel_pad) * kernel_size + (n + kernel_pad));
         total += v * in[(i + l) + (m * w * channels) + (n * channels)];
-        //total += v * in[(i + l) + (m + kernel_pad) * channels + (n + kernel_pad) * channels];
       }
-
     out[i + l] = total;
   }
 }
