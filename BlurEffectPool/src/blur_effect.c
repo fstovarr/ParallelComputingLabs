@@ -351,19 +351,23 @@ int applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, doub
 
 
 int main(int argc, char **argv){
-  printf("%d\n",argc);
   if(argc != 5){
     printf("Wrong arguments \n");
     return -1;
   }
+
   struct timeval after, before, result;
   gettimeofday(&before, NULL);
-
+  
   char *DIR_IMG_INPUT = argv[1];
   char *DIR_IMG_OUTPUT = argv[2];
   int KERNEL_SIZE = atoi(argv[3]);
   int N_THREADS = atoi(argv[4]);
-  int bucket_size = 255;
+  int bucket_size = 255; // this to avoid false sharing, check cache size to tune
+  double sigma = 15;
+  int verbose = 0;
+  if(argv[5] != NULL) sigma = atof(argv[5]);
+  if(argv[6] != NULL) verbose = atoi(argv[6]);
 
   double kernel[KERNEL_SIZE][KERNEL_SIZE];
   generateGaussianKernel(kernel, KERNEL_SIZE);
@@ -372,11 +376,11 @@ int main(int argc, char **argv){
   unsigned char *data = stbi_load(DIR_IMG_INPUT, &width, &height, &channels, STBI_default);
 
   if(data != NULL){
-    printf("Image dimensions: (%dpx, %dpx) and %d channels.\n", width, height, channels);
+    if(verbose) printf("Image dimensions: (%dpx, %dpx) and %d channels.\n", width, height, channels);
 
     unsigned char *output_image = malloc(width * height * channels);
     if(output_image == NULL) {
-      printf("Error trying to allocate memory space");
+      if(verbose) printf("Error trying to allocate memory space");
       stbi_image_free(data);
       return -1;
     }
@@ -384,18 +388,15 @@ int main(int argc, char **argv){
     applyFilter(data, output_image, width, height, channels, kernel, KERNEL_SIZE, bucket_size, N_THREADS);
 
     if(!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
-      printf("Image cannot be created");
+      if(verbose) printf("Image cannot be created");
     free(output_image);
   } else {
-    printf("Error loading the image");
+    if(verbose) printf("Error loading the image");
   }
 
   gettimeofday(&after, NULL);
   timersub(&after, &before, &result);
+  printf("%ld.%06ld\n", (long int) result.tv_sec, (long int) result.tv_usec);
 
-  FILE *results;
-  results = fopen("out.out", "a");
-  fprintf(results,"%ld.%06ld\n", (long int) result.tv_sec, (long int) result.tv_usec);
-  fclose(results);
   stbi_image_free(data);
 }
