@@ -5,7 +5,7 @@
 # Example: ./test-bench.sh BlurEffectBlockCyclic/bin/blur-effect img/test720.jpg BlurEffectBlockCyclic/out out.out
 # IF THIS DOES NOT RUN. MAKE sure to use bash test-bench.sh instead
 
-ITERATIONS=5
+ITERATIONS=1
 
 pwd
 rm $4

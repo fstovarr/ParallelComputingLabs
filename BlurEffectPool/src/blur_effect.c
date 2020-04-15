@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <unistd.h>
-#include<pthread.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -46,8 +46,6 @@ struct tpool {
   size_t           thread_cnt; // Saves the number of threads for the program
   bool             stop; // stops the threads
 };
-
-
 
 // -------------- HELPERS to create/destroy work objects --------------
 static tpool_work_t *tpool_work_create(void *arg) {

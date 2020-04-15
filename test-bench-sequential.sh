@@ -3,7 +3,7 @@
 
 pip install --user matplotlib
 pip install --user numpy
-ITERATIONS=5
+ITERATIONS=1
 
 pwd
 rm $2

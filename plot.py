@@ -43,7 +43,7 @@ if(sequentialAvailable):
     sped = []
     for i,k in enumerate(kern):
         times = avgs[(i*len(threads)) : ((i+1)*len(threads))]
-        speedup =[s / p for p,s in zip(times,seq)]
+        speedup =[seq[i] / p for p in times]
         ke += [k]*len(times)
         sped += speedup
         t+=times

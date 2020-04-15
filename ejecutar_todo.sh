@@ -6,7 +6,7 @@ pip install --user pandas
 IMG_PATH=$1
 
 # I make all because why not
-make -C BlurEffect
+make -C BlurEffectBlockCyclic
 make -C BlurEffectPool
 make -C BlurEffectSequential
 make -C BlurEffectBlock
