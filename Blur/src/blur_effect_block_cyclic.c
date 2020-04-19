@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
     //     printf("\n");
     // }
 
-        unsigned char *data, *output_image;
+    unsigned char *data, *output_image;
     int width, height, channels;
     data = stbi_load(DIR_IMG_INPUT, &width, &height, &channels, STBI_default);
 
@@ -164,8 +164,8 @@ int main(int argc, char *argv[]) {
         
         pthread_t *threads = calloc(THREADS, sizeof(pthread_t));
 
-        // int chunk = 64;
-        int chunk = width * height / (THREADS * 10);
+        int chunk = 1;
+        // int chunk = width * height / (THREADS * 10);
         // int chunk = width * height / (THREADS);
         // printf("%d\n", sizeof(double));
 
