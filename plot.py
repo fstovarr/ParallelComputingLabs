@@ -17,7 +17,7 @@ avgs = [sum(data[i-tests:i]) / tests for i in range(tests,len(data) + 1,tests)]
 threads = [1, 2, 4, 8, 16, 32]
 kern = [3, 5, 7, 9, 11, 13, 15]
 
-sequentialAvailable = os.path.isfile('Results/sequential_data.out')
+sequentialAvailable = os.path.isfile('Blur/results/blur_effect_sequential/sequential.out')
 
 plt.figure(figsize=(8,10))
 if(sequentialAvailable):
@@ -32,7 +32,7 @@ plt.ylabel('time')
 plt.legend(title='Kernel Size')
 
 if(sequentialAvailable):
-    f = open('Results/sequential_data.out')
+    f = open('Blur/results/blur_effect_sequential/sequential.out')
     data = [float(d.strip('\n')) for d in f.readlines()]
     f.close()
     seq = [sum(data[i-tests:i]) / tests for i in range(tests,len(data) + 1,tests)]

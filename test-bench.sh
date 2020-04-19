@@ -2,10 +2,10 @@
 # 2: image_path - The path of the image to process
 # 3: output_folder_path - Where to place the generated images
 # 4: The output file where the times are stored
-# Example: ./test-bench.sh BlurEffect/bin/blur-effect img/test720.jpg BlurEffect/out out.out
+# Example: ./test-bench.sh BlurEffectBlockCyclic/bin/blur-effect img/test720.jpg BlurEffectBlockCyclic/out out.out
 # IF THIS DOES NOT RUN. MAKE sure to use bash test-bench.sh instead
 
-ITERATIONS=5
+ITERATIONS=1
 
 pwd
 rm $4
@@ -29,5 +29,4 @@ done
 PLOT_PATH=${4%.*}.png
 CSV_PATH=${4%.*}.csv
 python plot.py $4 $ITERATIONS $PLOT_PATH $CSV_PATH
-
 

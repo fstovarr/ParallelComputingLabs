@@ -4,21 +4,18 @@ pip install --user matplotlib
 pip install --user numpy
 pip install --user pandas
 IMG_PATH=$1
-# I make all because why not
-make -C BlurEffect
-make -C BlurEffectPool
-make -C BlurEffectSequential
-make -C BlurEffectBlock
+
+make -C Blur
 
 # Runs Sequential
 echo "------- SEQUENTIAL------"
-./test-bench-sequential.sh $IMG_PATH Results/sequential_data.out
+./test-bench-sequential.sh $IMG_PATH Blur/results/blur_effect_sequential/sequential.out
 # Runs Block data
 echo "--------- BLOCK --------"
-./test-bench.sh BlurEffectBlock/bin/blur-effect $IMG_PATH BlurEffectBlock/out Results/block.out
+./test-bench.sh Blur/bin/blur_effect_blockwise $IMG_PATH Blur/out/blur_effect_blockwise Blur/results/blur_effect_blockwise/blockwise.out
 # Runs cyclic data
 echo "--------- CYCLIC--------"
-./test-bench.sh BlurEffect/bin/blur-effect $IMG_PATH BlurEffect/out Results/cyclic_data.out 
+./test-bench.sh Blur/bin/blur_effect_block_cyclic $IMG_PATH Blur/out/blur_effect_block_cyclic Blur/results/blur_effect_block_cyclic/bloc_cyclic.out 
 # Runs pool
 echo "---------- POOL ---------"
-./test-bench.sh BlurEffectPool/bin/blur-effect $IMG_PATH BlurEffectPool/out Results/pool_data.out 
+./test-bench.sh Blur/bin/blur_effect_pool $IMG_PATH Blur/out/blur_effect_pool Blur/results/blur_effect_pool/pool.out 
