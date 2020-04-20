@@ -2,9 +2,9 @@
 #include <math.h>
 #include <stdlib.h>
 #define STB_IMAGE_IMPLEMENTATION
-#include "./lib/stb/stb_image.h"
+#include "../lib/stb/stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "./lib/stb/stb_image_write.h"
+#include "../lib/stb/stb_image_write.h"
 #include <sys/time.h>
 
 #define SIGMA 15
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
             stbi_image_free(data);
             return -1;
         }
-        
+
         applyFilter(data, output_image, width, height, channels, (double *) &kernel, KERNEL_SIZE, THREADS);
 
         // for (int i = 0; i < width * height * channels; i++) {
