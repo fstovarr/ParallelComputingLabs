@@ -33,11 +33,10 @@ $(OBJDIR):
 	-@mkdir $(OBJDIR)
 
 $(EXECUTABLES): $(EXECUTABLEDIR)/%: $(OBJDIR)/%.o | $(EXECUTABLEDIR)
-	$(CC) $(FLAGS) $< -o $@
+	$(CC) $(FLAGS) $< -o $@ -lm
 
 fullclean: clean
 	-rm -R $(EXECUTABLEDIR)
-	-rm -R $(OBJDIR)
 	-rm -R $(RESULTS_DIR)
 
 clean:
