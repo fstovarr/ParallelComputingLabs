@@ -113,12 +113,6 @@ int main(int argc, char *argv[]) {
 
         applyFilter(data, output_image, width, height, channels, (double *) &kernel, KERNEL_SIZE, THREADS);
 
-        // for (int i = 0; i < width * height * channels; i++) {
-        //     printf("%f ", output_image[i]);
-        //     if(i % width * height == 0)
-        //         printf("\n");
-        // }
-
         if (!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
             printf("Image cannot be created");
 
