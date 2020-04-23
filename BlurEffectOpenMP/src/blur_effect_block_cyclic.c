@@ -6,6 +6,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../lib/stb/stb_image_write.h"
 #include <sys/time.h>
+#include <omp.h>
 
 #define SIGMA 15
 
@@ -44,27 +45,15 @@ void calculatePixel(unsigned char *in, unsigned char *out, int i, int w, int h, 
         for (int m = -kernel_pad; m <= kernel_pad; m++)
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
                 v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));
-                total += v * in[(i + l) +  (m * w * channels) + (n * channels )];
+                total += v * in[(i + l) +  (m * w * channels) + (n * channels)];
             }
         out[i + l] = total;
     }
 }
 
-void applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, double* kernel, int kernel_size, int threads) {
-    int kernel_pad = kernel_size / 2;
-    size_t size = w * h;
-
-    #pragma omp parallel for schedule(static, 64) num_threads(threads)
-    for (long long int i = 0; i < size * c; i += c)
-        if(i > kernel_pad * w * c && // Top
-            i < (size * c - kernel_pad * w * c) && // Bottom
-            i % (w * c) >= kernel_pad * c && // Left
-            i % (w * c) < (w * c - kernel_pad * c)) // Right
-            calculatePixel(in, out, i, w, h, c, kernel, kernel_size);
-        else
-            for (int j = 0; j < c; j++)
-                out[i + j] = 0;
-}
+// void applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, double* kernel, int kernel_size, int threads) {
+    
+// }
 
 int main(int argc, char *argv[]) {
     if(argc < 4) {
@@ -82,6 +71,9 @@ int main(int argc, char *argv[]) {
     sscanf(argv[3], "%d", &KERNEL_SIZE);
 
     int THREADS = atoi(argv[4]);
+    omp_set_num_threads( THREADS );
+
+    struct timeval th[THREADS];
 
     double sigma = SIGMA;
     if(argv[5] != 0) sscanf(argv[5], "%lf", &sigma);
@@ -99,6 +91,8 @@ int main(int argc, char *argv[]) {
     int width, height, channels;
     unsigned char *data = stbi_load(DIR_IMG_INPUT, &width, &height, &channels, STBI_default);
 
+    // printf("%u\n", sizeof(unsigned char));
+
     if (data != NULL) {
         if(verbose) printf("Image dimensions: (%dpx, %dpx) and %d channels.\n", width, height, channels);
         
@@ -111,20 +105,48 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
-        applyFilter(data, output_image, width, height, channels, (double *) &kernel, KERNEL_SIZE, THREADS);
+        // applyFilter(data, output_image, width, height, channels, (double *) &kernel, KERNEL_SIZE, THREADS);
 
-        if (!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
-            printf("Image cannot be created");
+        int kernel_pad = KERNEL_SIZE / 2;
+        size_t size = width * height;
+
+        int c = channels;
+        int w = width;
+        int h = height;
+
+        #pragma omp parallel 
+        {
+            #pragma omp for schedule(static)
+            for (int i = 0; i < size * c; i += c) {
+                if(i > kernel_pad * w * c && // Top
+                    i < (size * c - kernel_pad * w * c) && // Bottom
+                    i % (w * c) >= kernel_pad * c && // Left
+                    i % (w * c) < (w * c - kernel_pad * c)) // Right
+                    calculatePixel(data, output_image, i, w, h, c, kernel, KERNEL_SIZE);
+                else
+                    for (int j = 0; j < c; j++)
+                        output_image[i + j] = 0;
+            }
+
+            // int num_thread = omp_get_thread_num();
+
+            // gettimeofday(&th[num_thread], NULL);
+            // timersub(&th[num_thread], &before, &result);
+            // printf("\nTime 1 in thread %d: %ld.%06ld\n", num_thread, (long int) result.tv_sec, (long int) result.tv_usec);
+        }
+
+        gettimeofday(&after, NULL);
+        timersub(&after, &before, &result);
+        if(verbose) printf("\nTime elapsed: %ld.%06ld\n", (long int) result.tv_sec, (long int) result.tv_usec);
+        else printf("%ld.%06ld\n", (long int)result.tv_sec, (long int)result.tv_usec);
+
+        // if (!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
+        //     printf("Image cannot be created");
 
         free(output_image);
     } else {
         printf("Error loading the image");
     }
-
-    gettimeofday(&after, NULL);
-    timersub(&after, &before, &result);
-    if(verbose) printf("\nTime elapsed: %ld.%06ld\n", (long int) result.tv_sec, (long int) result.tv_usec);
-    else printf("%ld.%06ld\n", (long int)result.tv_sec, (long int)result.tv_usec);
 
     stbi_image_free(data);
 }
