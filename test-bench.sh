@@ -19,7 +19,7 @@ do
     echo "KERN:$K THR:$THREADS" 
     for (( i=0; i<$ITERATIONS; i++ ))
     do
-      echo "TIME: $i"
+      echo "Iteration: $i"
       COMMAND="$1 $2 $OUT_FILENAME $K $THREADS"
       `echo $COMMAND` >> $4
     done
