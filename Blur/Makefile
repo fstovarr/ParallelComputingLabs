@@ -27,13 +27,13 @@ prepare:
 	-@mkdir $(RESULTS_SUB_DIRS)
 
 $(OBJECTS): $(OBJDIR)/%.o: $(SOURCEDIR)/%.c | $(OBJDIR)
-	$(CC) -Wall -pedantic -c $< -o $@
+	$(CC) -Wall -pedantic -c $(FLAGS) $< -o $@
 
 $(OBJDIR):
 	-@mkdir $(OBJDIR)
 
 $(EXECUTABLES): $(EXECUTABLEDIR)/%: $(OBJDIR)/%.o | $(EXECUTABLEDIR)
-	$(CC) $(FLAGS) $< -o $@ -lm
+	$(CC) $< -o $@ $(FLAGS)
 
 fullclean: clean
 	-rm -R $(EXECUTABLEDIR)

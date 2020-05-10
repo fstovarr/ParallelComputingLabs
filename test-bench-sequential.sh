@@ -15,7 +15,7 @@ do
   echo "KERN:$K" 
   for (( i=0; i<$ITERATIONS; i++ ))
   do
-    echo "TIME: $i"
+    echo "Iteration: $i"
     COMMAND="./Blur/bin/blur_effect_sequential $1 $OUT_FILENAME $K"
     `echo $COMMAND` >> $2
   done
