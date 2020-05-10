@@ -29,18 +29,6 @@
 __device__ double atomicAdd(double* a, double b) { return b; }
 #endif
 
-__global__ void calculatePi(double *piTotal, int totalThreads)
-{   
-    long int i = 0;
-    int index = (blockDim.x * blockIdx.x) + threadIdx.x;
-     
-    __syncthreads();
-    if(index == 0){
-        for(i = 1; i < totalThreads; i++)
-            piTotal[0] += 1;
-    }
-}
-
 // http://pages.stat.wisc.edu/~mchung/teaching/MIA/reading/diffusion.gaussian.kernel.pdf.pdf
 __global__ void generateGaussianKernel(double *k, double *accumulation, int size, double sigma) {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
