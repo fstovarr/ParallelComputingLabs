@@ -140,8 +140,8 @@ int main(int argc, char *argv[]) {
         if(verbose) printf("\nTime elapsed: %ld.%06ld\n", (long int) result.tv_sec, (long int) result.tv_usec);
         else printf("%ld.%06ld\n", (long int)result.tv_sec, (long int)result.tv_usec);
 
-        // if (!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
-        //     printf("Image cannot be created");
+        if (!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
+            printf("Image cannot be created");
 
         free(output_image);
     } else {
