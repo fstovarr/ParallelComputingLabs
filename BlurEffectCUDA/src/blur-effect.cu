@@ -1,5 +1,3 @@
-%%writefile src/blur-effect.cu 
-
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
