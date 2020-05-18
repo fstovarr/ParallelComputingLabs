@@ -13,15 +13,15 @@ echo "------- SEQUENTIAL------"
 
 # Runs Block data
 # echo "--------- BLOCK --------"
-# ./test-bench.sh Blur/bin/blur_effect_blockwise $IMG_PATH Blur/out/blur_effect_blockwise Blur/results/blur_effect_blockwise/blockwise.out
+./test-bench.sh Blur/bin/blur_effect_blockwise $IMG_PATH Blur/out/blur_effect_blockwise Blur/results/blur_effect_blockwise/blockwise.out
 
 # Runs cyclic data
 #echo "--------- CYCLIC--------"
-#./test-bench.sh Blur/bin/blur_effect_block_cyclic $IMG_PATH Blur/out/blur_effect_block_cyclic Blur/results/blur_effect_block_cyclic/block_cyclic.out 
+./test-bench.sh Blur/bin/blur_effect_block_cyclic $IMG_PATH Blur/out/blur_effect_block_cyclic Blur/results/blur_effect_block_cyclic/block_cyclic.out 
 
 # Runs pool
 # echo "---------- POOL ---------"
-# ./test-bench.sh Blur/bin/blur_effect_pool $IMG_PATH Blur/out/blur_effect_pool Blur/results/blur_effect_pool/pool.out 
+./test-bench.sh Blur/bin/blur_effect_pool $IMG_PATH Blur/out/blur_effect_pool Blur/results/blur_effect_pool/pool.out 
 
 # Runs Block OMP
 echo "---------- BLOCK - OMP ---------"
@@ -30,3 +30,7 @@ echo "---------- BLOCK - OMP ---------"
 # Runs Cyclic OMP
 echo "---------- CYCLIC - OMP ---------"
 ./test-bench.sh Blur/bin/blur_effect_block_cyclic_omp $IMG_PATH Blur/out/blur_effect_block_cyclic_omp Blur/results/blur_effect_block_cyclic_omp/block_cyclic_omp.out 
+
+# Run CUDA
+echo "---------- CYCLIC - OMP ---------"
+./test-bench.sh BlurEffectCUDA/bin/blur_effect_block_cyclic_omp $IMG_PATH BlurEffectCUDA/out/blur_effect_block_cyclic_omp BlurEffectCUDA/results/blur_effect_block_cyclic_omp/block_cyclic_omp.out 

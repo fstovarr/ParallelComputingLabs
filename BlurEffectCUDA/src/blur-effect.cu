@@ -1,4 +1,4 @@
-// !./bin/blur-effect $INPUT_FILE $OUTPUT_FILE $KERNEL_SIZE $SIGMA $VERBOSE
+%%writefile src/blur-effect.cu 
 
 #include <stdio.h>
 #include <math.h>
@@ -12,7 +12,7 @@
 #include <helper_cuda.h>
 
 #define SIGMA 15
-#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define MIN(x, y) ((x < y) ? x : y)
 #define CHECK(call)                                                            \
 {                                                                              \
     const cudaError_t error = call;                                            \
@@ -41,7 +41,7 @@ __global__ void generateGaussianKernel(double *k, double *accumulation, int size
     }
 
     __syncthreads();
-
+    
     if(idx == 0) {
       for (i = 0; i < (size * size); i++)
         k[i] /= *accumulation;
@@ -49,7 +49,7 @@ __global__ void generateGaussianKernel(double *k, double *accumulation, int size
 }
 
 __device__ void calculatePixel(unsigned char *in, unsigned char *out, long int i, int w, int h, int channels, double* kernel, int kernel_size) {
-    int kernel_pad = kernel_size / 2, idx;
+    int kernel_pad = kernel_size / 2, px;
     double v = 0.0, total = 0.0;
 
     for (int l = 0; l < channels; l++) {
@@ -57,27 +57,29 @@ __device__ void calculatePixel(unsigned char *in, unsigned char *out, long int i
         for (int m = -kernel_pad; m <= kernel_pad; m++)
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
                 v = kernel[(m  + kernel_pad) * kernel_size + (n + kernel_pad)];
-                idx = ((i + l) + (m * w * channels) + (n * channels)) % (w * h * channels);
-                total += v * (in[idx]);
+                px = in[(i + l + m * channels + n * channels * w) % (w * h * channels)];
+                total += v * px;
             }
         out[i + l] = total;
     }
 }
 
-__global__ void applyFilter(unsigned char *in, unsigned char *out, double *kernel, int w, int h, int c, int kernel_size) {
+__global__ void applyFilter(unsigned char *in, unsigned char *out, double *kernel, int w, int h, int c, int kernel_size, int chunk_size, int total_threads) {
     int kernel_pad = kernel_size / 2;
     size_t size = w * h * c;
-    long int idx = (blockDim.x * blockIdx.x + threadIdx.x) * c;
+    long int start = (blockDim.x * blockIdx.x + threadIdx.x) * chunk_size;
+    long int end = (start + chunk_size) < (w * h) ? (start + chunk_size) : (w * h);
 
-    if(idx < size)
-        if(idx >= kernel_pad * w * c && // Top
-            idx < (size - kernel_pad * w * c) && // Bottom
-            idx % (w * c) >= kernel_pad * c && // Left
-            idx % (w * c) < (w * c - kernel_pad * c)) // Right
-            calculatePixel(in, out, idx, w, h, c, kernel, kernel_size);
-        else 
-            for (int j = 0; j < c; j++) 
-                out[idx + j] = 0;
+    if(start < w * h)
+      for(int idx = start * c; idx < end * c; idx += c)
+          if(idx >= kernel_pad * w * c && // Top
+              idx < (size - kernel_pad * w * c) && // Bottom
+              idx % (w * c) >= kernel_pad * c && // Left
+              idx % (w * c) < (w * c - kernel_pad * c)) // Right
+              calculatePixel(in, out, idx, w, h, c, kernel, kernel_size);
+          else 
+              for (int j = 0; j < c; j++)
+                out[idx + j] = in[idx + j];
 }
 
 int main(int argc, char *argv[]) {
@@ -90,7 +92,7 @@ int main(int argc, char *argv[]) {
     gettimeofday(&before, NULL);
 
     char *DIR_IMG_INPUT, *DIR_IMG_OUTPUT;
-    int KERNEL_SIZE, THREADS, verbose;
+    int KERNEL_SIZE, verbose, threads = -1, blocks = -1;
     double sigma;
 
     DIR_IMG_INPUT = argv[1];
@@ -99,15 +101,23 @@ int main(int argc, char *argv[]) {
     KERNEL_SIZE = 3;
     sscanf(argv[3], "%d", &KERNEL_SIZE);
     if(KERNEL_SIZE % 2 == 0) {
-        printf("The kernel size must be odd");
+        printf("Kernel size must be odd");
         return -1;
     }
 
-    sigma = SIGMA;
-    if(argv[4] != 0) sscanf(argv[4], "%lf", &sigma);
+    if(argv[4] != NULL)
+        sscanf(argv[4], "%d", &threads);
 
-    if(argv[5] != NULL) {
-        sscanf(argv[5], "%d", &verbose);
+    if(argv[5] != NULL)
+        sscanf(argv[5], "%d", &blocks);
+
+    bool manual = (threads != -1 && blocks != -1);
+
+    sigma = SIGMA;
+    if(argv[6] != 0) sscanf(argv[6], "%lf", &sigma);
+
+    if(argv[7] != NULL) {
+        sscanf(argv[7], "%d", &verbose);
         if(verbose != 1)
             verbose = 0;
     }
@@ -155,7 +165,7 @@ int main(int argc, char *argv[]) {
     CHECK(cudaMemcpy(h_kernel, d_kernel, kernel_cells * sizeof(double), cudaMemcpyDeviceToHost));
 
     if(verbose)
-      printf("Kernel computed in %d threads in %d blocks\n.", threadsPerBlock, blocksPerGrid);
+      printf("Kernel computed with %d threads per block and %d blocks\n.", threadsPerBlock, blocksPerGrid);
 
     cudaFree(d_sum);
 
@@ -166,12 +176,14 @@ int main(int argc, char *argv[]) {
     if (h_data != NULL) {
         if(verbose) printf("\nImage dimensions: (%dpx, %dpx) and %d channels.\n", width, height, channels);
 
+        size_t image_size = width * height * channels; 
+
         unsigned char *h_output_image, *d_data, *d_output_image;
-        CHECK(cudaMalloc((void **) &d_output_image, width * height * channels * sizeof(unsigned char)));
-        CHECK(cudaMalloc((void **) &d_data, width * height * channels * sizeof(unsigned char)));
-        CHECK(cudaMemcpy(d_data, h_data, width * height * channels * sizeof(unsigned char), cudaMemcpyHostToDevice));
+        CHECK(cudaMalloc((void **) &d_output_image, image_size * sizeof(unsigned char)));
+        CHECK(cudaMalloc((void **) &d_data, image_size * sizeof(unsigned char)));
+        CHECK(cudaMemcpy(d_data, h_data, image_size * sizeof(unsigned char), cudaMemcpyHostToDevice));
         
-        h_output_image = (unsigned char*) malloc(width * height * channels * sizeof(unsigned char));
+        h_output_image = (unsigned char*) malloc(image_size * sizeof(unsigned char));
         if(h_output_image == NULL) {
             printf("Error trying to allocate memory space");
             free(h_output_image);
@@ -179,15 +191,23 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
-        threadsPerBlock = MIN(coresPerMP * 2, width * height);
-        blocksPerGrid = floor(width * height / threadsPerBlock) + 1;
+        if(manual) {
+            threadsPerBlock = threads;
+            blocksPerGrid = blocks;
+        } else {
+            threadsPerBlock = MIN(coresPerMP * 2, width * height);
+            blocksPerGrid = floor(width * height / threadsPerBlock) + 1;
+        }
 
-        applyFilter<<<blocksPerGrid, threadsPerBlock>>>(d_data, d_output_image, d_kernel, width, height, channels, KERNEL_SIZE);
+        int total_threads = (threadsPerBlock * blocksPerGrid);
+        int chunk_size = MAX(1, floor((width * height) / total_threads));
+
+        applyFilter<<<blocksPerGrid, threadsPerBlock>>>(d_data, d_output_image, d_kernel, width, height, channels, KERNEL_SIZE, chunk_size, total_threads);
+
+        CHECK(cudaMemcpy(h_output_image, d_output_image, image_size * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
         if(verbose)
-          printf("Filter applied with %d threads in %d blocks\n.", threadsPerBlock, blocksPerGrid);
-
-        CHECK(cudaMemcpy(h_output_image, d_output_image, width * height * channels * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+          printf("Filter applied in %s mode with %d threads per block and %d blocks\n.", manual ? "manual" : "auto", threadsPerBlock, blocksPerGrid);
 
         CHECK(cudaFree(d_kernel));
         CHECK(cudaFree(d_output_image));
