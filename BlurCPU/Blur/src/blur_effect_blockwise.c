@@ -23,7 +23,7 @@ void generateGaussianKernel(double* k, int size) {
         for (int y = -mid_size; y <= mid_size; y++) {
             int idx = (x + mid_size) * size + y + mid_size;
             // double r = sqrt();
-            res = (double)(exp(-(x * x + y * y) / two_sigma_sq) / (two_sigma_sq * M_PI));
+            res = (double)(exp(-(x * x + y * y) / two_sigma_sq) / (two_sigma_sq * M_PI));//formula general para kernel gaussiano
             memcpy(k + idx, &res, sizeof(res));
             sum += *(k + idx);
         }
@@ -35,22 +35,23 @@ void generateGaussianKernel(double* k, int size) {
         }
 }
 
+//esta funcion calcula el pixel resultante para un solo pixel
 void calculatePixel(unsigned char *in, unsigned char *out, int i, int w, int h, int channels, double* kernel, int kernel_size) {
     int kernel_pad = kernel_size / 2;
     double v = 0.0, total = 0.0;
 
-    for (int l = 0; l < channels; l++) {
+    for (int l = 0; l < channels; l++) { // se calcula para cada canal de forma separada
         total = 0.0;
         for (int m = -kernel_pad; m <= kernel_pad; m++)
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
-                v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));
-                total += v * in[(i + l) +  (m * w * channels) + (n * channels )];
+                v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));//valor en el kernel
+                total += v * in[(i + l) +  (m * w * channels) + (n * channels )];// acumulado del producto punto a punto del kernel y la imagen original
             }
         out[i + l] = total;
     }
 }
 
-
+//Esta estructura nos permite tener la informacion necesaria para que cada hilo realice su trabajo
 struct args
 {
   unsigned char * in;
@@ -100,6 +101,7 @@ void applyFilter( struct args * data )
    }
 }
 
+//funcion que ejecuta cada hilo
 void * run( void * ap )
 {
   struct args * data  = (struct args*)ap;
@@ -116,6 +118,7 @@ int main(int argc, char *argv[]) {
     struct timeval after, before, result;
     gettimeofday(&before, NULL);
 
+    //los argumentos son: direccion de entrada, direccion de salida, size del kernel, numero de hilos
     char *DIR_IMG_INPUT = argv[1];
     char *DIR_IMG_OUTPUT = argv[2];
     int KERNEL_SIZE = atoi(argv[3]);
@@ -152,7 +155,7 @@ int main(int argc, char *argv[]) {
         //paralelization to apply filter using blockwise processing distribution
 
         pthread_t idThread[NUMBER_OF_THREADS];
-        struct args arg[NUMBER_OF_THREADS];
+        struct args arg[NUMBER_OF_THREADS];//arreglo con los argumentos para cada hilo
         for( int i = 0; i < NUMBER_OF_THREADS; ++ i )
         {
           arg[i].in = data;
@@ -164,11 +167,11 @@ int main(int argc, char *argv[]) {
           arg[i].kernel_size = KERNEL_SIZE;
           arg[i].thread_id = i;
           arg[i].number_of_threads = NUMBER_OF_THREADS;
-          pthread_create(&idThread[i], NULL, run, (void*)&arg[i] );
+          pthread_create(&idThread[i], NULL, run, (void*)&arg[i] );//lanzamiento de hilos
         }
 
         for( int i = 0; i < NUMBER_OF_THREADS; ++ i )
-          pthread_join( idThread[i], NULL );
+          pthread_join( idThread[i], NULL );//join de los hilos
 
         if(!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
             if(verbose)printf("Image cannot be created");
