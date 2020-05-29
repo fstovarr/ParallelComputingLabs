@@ -12,7 +12,7 @@
 
 #define SIGMA 15
 
-struct Args {
+struct Args {//Esta estructura nos permite tener la informacion necesaria para que cada hilo realize su trabajo
     int id;
     int chunk_size;
     int threads;
@@ -37,7 +37,7 @@ void generateGaussianKernel(double* k, int size, double sigma, double *mean) {
     for (int x = -mid_size; x <= mid_size; x++) 
         for (int y = -mid_size; y <= mid_size; y++) {
             int idx = (x + mid_size) * size + y + mid_size;
-            res = (double)(exp(-(x * x + y * y) / two_sigma_sq) / (two_sigma_sq * M_PI));
+            res = (double)(exp(-(x * x + y * y) / two_sigma_sq) / (two_sigma_sq * M_PI));//formula general para kernel gaussiano
             memcpy(k + idx, &res, sizeof(res));
             sum += *(k + idx);
         }
@@ -52,17 +52,18 @@ void generateGaussianKernel(double* k, int size, double sigma, double *mean) {
     memcpy(mean, &tmp_mean, sizeof(double));
 }
 
+//esta funcion calcula el pixel resultante para un solo pixel
 void calculatePixel(unsigned char *in, unsigned char *out, long long int i, int w, int h, int channels, double* kernel, int kernel_size) {
     int kernel_pad = kernel_size / 2, idx;
     double v = 0.0, total = 0.0;
 
-    for (int l = 0; l < channels; l++) {
+    for (int l = 0; l < channels; l++) { // se calcula para cada canal de forma separada
         total = 0.0;
         for (int m = -kernel_pad; m <= kernel_pad; m++)
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
-                v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));
-                idx = ((i + l) + (m * w * channels) + (n * channels)) % (w * h * channels);
-                total += v * (in[idx]);
+                v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));//valor en el kernel
+                idx = ((i + l) + (m * w * channels) + (n * channels)) % (w * h * channels);//posicion en la imagen original
+                total += v * (in[idx]);// acumulado del producto punto a punto del kernel y la imagen original
             }
         out[i + l] = total;
     }
@@ -77,7 +78,7 @@ void applyFilter(unsigned char *in, unsigned char *out, long long int start, lon
             i < (size * c - kernel_pad * w * c) && // Bottom
             i % (w * c) >= kernel_pad * c && // Left
             i % (w * c) < (w * c - kernel_pad * c)) // Right
-            calculatePixel(in, out, i, w, h, c, kernel, kernel_size);
+            calculatePixel(in, out, i, w, h, c, kernel, kernel_size);//solo se invoca si el pixel tiene un contorno coherente con el size del kernel
         else 
             for (int j = 0; j < c; j++) 
                 out[i + j] = 0;
@@ -111,6 +112,7 @@ int main(int argc, char *argv[]) {
         printf("Wrong arguments!\n");
         return -1;
     }
+    //los argumentos son: direccion de entrada, direccion de salida, size del kernel, numero de hilos y sigma
 
     struct timeval after, before, result;
     gettimeofday(&before, NULL);
@@ -135,7 +137,7 @@ int main(int argc, char *argv[]) {
         sscanf(argv[6], "%d", &verbose);
         if(verbose != 1)
             verbose = 0;
-    }
+    }            printf("Error trying to allocate memory space");
 
     double kernel[KERNEL_SIZE][KERNEL_SIZE];
     double mean = 0.0;
@@ -172,6 +174,7 @@ int main(int argc, char *argv[]) {
         struct Args *template = (struct Args *) calloc(THREADS, sizeof(struct Args));
 
         for (int i = 0; i < THREADS; i++) {
+            //se asignan los atributos a la estructura del hilo i en template[i]
             (template + i)->id = i;
             (template + i)->chunk_size = chunk;
             (template + i)->threads = THREADS;
