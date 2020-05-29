@@ -1,3 +1,5 @@
+%%writefile src/blur-effect.cu 
+
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -90,7 +92,7 @@ int main(int argc, char *argv[]) {
     gettimeofday(&before, NULL);
 
     char *DIR_IMG_INPUT, *DIR_IMG_OUTPUT;
-    int KERNEL_SIZE, verbose, threads = -1, blocks = -1;
+    int KERNEL_SIZE, verbose, THREADS = -1, BLOCKS = -1;
     double sigma;
 
     DIR_IMG_INPUT = argv[1];
@@ -104,12 +106,14 @@ int main(int argc, char *argv[]) {
     }
 
     if(argv[4] != NULL)
-        sscanf(argv[4], "%d", &threads);
+        sscanf(argv[4], "%d", &THREADS);
 
     if(argv[5] != NULL)
-        sscanf(argv[5], "%d", &blocks);
+        sscanf(argv[5], "%d", &BLOCKS);
 
-    bool manual = (threads != -1 && blocks != -1);
+    int auto = 0;
+    if((THREADS == -1 || BLOCKS == -1)) 
+        auto = 1;
 
     sigma = SIGMA;
     if(argv[6] != 0) sscanf(argv[6], "%lf", &sigma);
@@ -163,7 +167,7 @@ int main(int argc, char *argv[]) {
     CHECK(cudaMemcpy(h_kernel, d_kernel, kernel_cells * sizeof(double), cudaMemcpyDeviceToHost));
 
     if(verbose)
-      printf("Kernel computed with %d threads per block and %d blocks\n.", threadsPerBlock, blocksPerGrid);
+      printf("Kernel computed with %d threads in %d blocks\n.", threadsPerBlock, blocksPerGrid);
 
     cudaFree(d_sum);
 
@@ -189,12 +193,12 @@ int main(int argc, char *argv[]) {
             return -1;
         }
 
-        if(manual) {
-            threadsPerBlock = threads;
-            blocksPerGrid = blocks;
-        } else {
+        if(auto) {
             threadsPerBlock = MIN(coresPerMP * 2, width * height);
             blocksPerGrid = floor(width * height / threadsPerBlock) + 1;
+        } else {
+            threadsPerBlock = THREADS;
+            blocksPerGrid = BLOCKS;
         }
 
         int total_threads = (threadsPerBlock * blocksPerGrid);
@@ -205,7 +209,7 @@ int main(int argc, char *argv[]) {
         CHECK(cudaMemcpy(h_output_image, d_output_image, image_size * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
         if(verbose)
-          printf("Filter applied in %s mode with %d threads per block and %d blocks\n.", manual ? "manual" : "auto", threadsPerBlock, blocksPerGrid);
+          printf("Filter applied in %s mode with %d threads in %d blocks\n.", auto ? "auto" : "manual", threadsPerBlock, blocksPerGrid);
 
         CHECK(cudaFree(d_kernel));
         CHECK(cudaFree(d_output_image));
