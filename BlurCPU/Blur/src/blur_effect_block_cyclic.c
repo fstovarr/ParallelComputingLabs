@@ -12,7 +12,7 @@
 
 #define SIGMA 15
 
-struct Args {//Esta estructura nos permite tener la informacion necesaria para que cada hilo realize su trabajo
+struct Args {//Esta estructura nos permite tener la informacion necesaria para que cada hilo realice su trabajo
     int id;
     int chunk_size;
     int threads;
