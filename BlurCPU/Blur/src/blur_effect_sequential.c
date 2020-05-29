@@ -23,7 +23,7 @@ void generateGaussianKernel(double* k, int size, double sigma) {
         for (int y = -mid_size; y <= mid_size; y++) {
             int idx = (x + mid_size) * size + y + mid_size;
             // double r = sqrt();
-            res = (double)(exp(-(x * x + y * y) / two_sigma_sq) / (two_sigma_sq * M_PI));
+            res = (double)(exp(-(x * x + y * y) / two_sigma_sq) / (two_sigma_sq * M_PI));//formula general para kernel gaussiano
             memcpy(k + idx, &res, sizeof(res));
             sum += *(k + idx);
         }
@@ -43,14 +43,15 @@ void calculatePixel(unsigned char *in, unsigned char *out, int i, int w, int h, 
         total = 0.0;
         for (int m = -kernel_pad; m <= kernel_pad; m++)
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
-                v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));
-                total += v * in[(i + l) +  (m * w * channels) + (n * channels )];
+                v = *(kernel + (m  + kernel_pad) * kernel_size + (n + kernel_pad));//valor en el kernel
+                total += v * in[(i + l) +  (m * w * channels) + (n * channels )];// acumulado del producto punto a punto del kernel y la imagen original
             }
 
         out[i + l] = total;
     }
 }
 
+//se aplica el filtro de forma secuencial para cada pixel
 void applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, double* kernel, int kernel_size) {
     int kernel_pad = kernel_size / 2;
     size_t size = w * h;
@@ -60,7 +61,7 @@ void applyFilter(unsigned char *in, unsigned char *out, int w, int h, int c, dou
             i < (size * c - kernel_pad * w * c) && // Bottom
             i % (w * c) >= kernel_pad * c && // Left
             i % (w * c) < (w * c - kernel_pad * c)) // Right
-            calculatePixel(in, out, i, w, h, c, kernel, kernel_size);
+            calculatePixel(in, out, i, w, h, c, kernel, kernel_size);//solo se invoca si el pixel tiene un contorno coherente con el size del kernel
         else
             for (int j = 0; j < c; j++)
                 out[i + j] = 0;
@@ -75,6 +76,7 @@ int main(int argc, char *argv[]) {
     struct timeval after, before, result;
     gettimeofday(&before, NULL);
 
+    //los argumentos son: direccion de entrada, direccion de salida y size del kernel
     char *DIR_IMG_INPUT = argv[1];
     char *DIR_IMG_OUTPUT = argv[2];
     int KERNEL_SIZE = 3;
