@@ -12,11 +12,11 @@ BlurCPU
 │     └───src
 │     Makefile
 │     README.md
-│  run_all.sh # Script to run all test benchs
-|  test-bench.sh # Script to run a single test bench
-|  plot.py # Script de python to make plots
-|  plot_seq.py # Script de python to make plots of sequential version
-|  Analysis.ipynb # python notebook to show how the program works
+│  run_all.sh       # Script to run all test benchs
+|  test-bench.sh    # Script to run a single test bench
+|  plot.py          # Script de python to make plots
+|  plot_seq.py      # Script de python to make plots of sequential version
+|  Analysis.ipynb   # python notebook to show how the program works
 │
 BlurGPU
 │ └───Blur
@@ -25,10 +25,10 @@ BlurGPU
 │     └───src
 │  plot_cuda.py # Script to plot the data produced in the GPU execution
 Results
-│ └───CUDA
-│ └───OMP
-│ └───POSIX
-│ └───Sequential
+│ └───CUDA          # Data and plots for the execution with CUDA
+│ └───OMP           # Data and plots for the execution with OMP
+│ └───POSIX         # Data and plots for the execution with POSIX
+│ └───Sequential    # Data and plots for the execution
 ```
 
 ## Build and run
@@ -47,12 +47,12 @@ make clean # Delete objects folder
 make fullclean # Delete objects, bin and other non-esencial folders
 ```
 
-## Run test bench
+## Run test bench (CPU)
 
 Perform the test bench for all folders (Sequential, Block, BlockCyclic, Pool)
 
 ```
-./ejecutar_todo.sh
+./run_all.sh
 ```
 
 To perfom a test bench for single paradigm, run
@@ -70,3 +70,7 @@ To perfom a test bench for single paradigm, run
 # Runs Pool
 ./test-bench.sh BlurEffectPool/bin/blur-effect $IMG_PATH BlurEffectPool/out Results/pool_data.out
 ```
+
+## Run test bench (GPU)
+
+For the `BlurGPU` folder, the test bench is contained in the notebook `Blur_effect.ipynb`.
