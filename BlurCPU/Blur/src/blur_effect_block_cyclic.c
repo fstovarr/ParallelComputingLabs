@@ -84,6 +84,7 @@ void applyFilter(unsigned char *in, unsigned char *out, long long int start, lon
                 out[i + j] = 0;
 }
 
+//funcion que ejecuta cada hilo
 void processImage(void *arg) {
     struct Args *args = arg;
     int id = args->id;
@@ -186,11 +187,11 @@ int main(int argc, char *argv[]) {
             (template + i)->in = data;
             (template + i)->out = output_image;
             (template + i)->mean = &mean;
-            pthread_create(&threads[i], NULL, (void *(*)(void *))processImage, (template + i));
+            pthread_create(&threads[i], NULL, (void *(*)(void *))processImage, (template + i));//lanzamiento de los hilos
         }
 
         for (int i = 0; i < THREADS; i++) 
-            pthread_join(threads[i], NULL);
+            pthread_join(threads[i], NULL);//join de los hilos
 
         if (!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
             printf("Image cannot be created");
