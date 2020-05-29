@@ -36,7 +36,7 @@ __global__ void generateGaussianKernel(double *k, double *accumulation, int size
     int i = 0;
 
     if(idx < size * size) {
-        k[idx] = (double)(exp(-(x * x + y * y) / (2.0 * sigma * sigma)) / (2.0 * sigma * sigma * M_PI));
+        k[idx] = (double)(exp(-(x * x + y * y) / (2.0 * sigma * sigma)) / (2.0 * sigma * sigma * M_PI));//formula general kernel gaussiano
         atomicAdd(accumulation, k[idx]);
     }
 
@@ -48,6 +48,7 @@ __global__ void generateGaussianKernel(double *k, double *accumulation, int size
     }    
 }
 
+//funcion para calcular el pixel resultante para un solo pixel
 __device__ void calculatePixel(unsigned char *in, unsigned char *out, long int i, int w, int h, int channels, double* kernel, int kernel_size) {
     int kernel_pad = kernel_size / 2, px;
     double v = 0.0, total = 0.0;
@@ -56,14 +57,15 @@ __device__ void calculatePixel(unsigned char *in, unsigned char *out, long int i
         total = 0.0;
         for (int m = -kernel_pad; m <= kernel_pad; m++)
             for (int n = -kernel_pad; n <= kernel_pad; n++) {
-                v = kernel[(m  + kernel_pad) * kernel_size + (n + kernel_pad)];
-                px = in[(i + l + m * channels + n * channels * w) % (w * h * channels)];
-                total += v * px;
+                v = kernel[(m  + kernel_pad) * kernel_size + (n + kernel_pad)];//valor en el kernel
+                px = in[(i + l + m * channels + n * channels * w) % (w * h * channels)];//valor de pixel vecino
+                total += v * px;//suma de producto punto a punto
             }
         out[i + l] = total;
     }
 }
 
+//funcion general para calcular el filtro en el rango[start,start+chunksize]
 __global__ void applyFilter(unsigned char *in, unsigned char *out, double *kernel, int w, int h, int c, int kernel_size, int chunk_size, int total_threads) {
     int kernel_pad = kernel_size / 2;
     size_t size = w * h * c;
@@ -87,6 +89,8 @@ int main(int argc, char *argv[]) {
         printf("Wrong arguments!\n");
         return -1;
     }
+    
+    //los argumentos son: direccion de entrada, direccion de salida, size del kernel, numero de hilos y numero de bloques
 
     struct timeval after, before, result;
     gettimeofday(&before, NULL);
@@ -138,6 +142,7 @@ int main(int argc, char *argv[]) {
     cudaDeviceProp deviceProp;
     cudaGetDeviceProperties(&deviceProp, 0);
 
+    //variables usadas para balanceo de carga
     int coresPerMP = _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor);
     int multiProcessors = deviceProp.multiProcessorCount;
 
@@ -162,6 +167,7 @@ int main(int argc, char *argv[]) {
     threadsPerBlock = MIN(coresPerMP, kernel_cells);
     blocksPerGrid = floor(kernel_cells / threadsPerBlock) + 1;
 
+    //invocacion para el calculo del kernel usando la GPU
     generateGaussianKernel<<<blocksPerGrid, threadsPerBlock>>>((double *) d_kernel, d_sum, KERNEL_SIZE, sigma);
 
     CHECK(cudaMemcpy(h_kernel, d_kernel, kernel_cells * sizeof(double), cudaMemcpyDeviceToHost));
@@ -204,6 +210,7 @@ int main(int argc, char *argv[]) {
         int total_threads = (threadsPerBlock * blocksPerGrid);
         int chunk_size = MAX(1, floor((width * height) / total_threads));
 
+        //invocacion de la funcion a ser ejecutada en GPU
         applyFilter<<<blocksPerGrid, threadsPerBlock>>>(d_data, d_output_image, d_kernel, width, height, channels, KERNEL_SIZE, chunk_size, total_threads);
 
         CHECK(cudaMemcpy(h_output_image, d_output_image, image_size * sizeof(unsigned char), cudaMemcpyDeviceToHost));
