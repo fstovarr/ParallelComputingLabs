@@ -5,32 +5,30 @@ In this project you will find different implementations of blur effect applied t
 The directory presents the following structure:
 
 ```bash
-BlurrEfectPOSIX
-│   README.md
-│   ejecutar_todo.sh # Script to run all test benchs
-|   test-bench.sh # Script to run a single test bench
-|   plot.py # Script de python to make plots
-|   plot_seq.py # Script de python to make plots of sequential version
-|   Analysis.ipynb # python notebook to show how the program works
+BlurCPU
+│ └───Blur
+│     └───img
+│     └───lib
+│     └───src
+│     Makefile
+│     README.md
+│  run_all.sh # Script to run all test benchs
+|  test-bench.sh # Script to run a single test bench
+|  plot.py # Script de python to make plots
+|  plot_seq.py # Script de python to make plots of sequential version
+|  Analysis.ipynb # python notebook to show how the program works
 │
-└───BlurEffectSequential
-└───BlurEffectBlock
-└───BlurEffectBlockCyclic
-└───BlurEffectPool
-└───img
-└───out
-```
-
-In each of the following folders with name BlurEffect\*, you will find the problems solution according to a different paradigm for threads work distribution (sequential, block, block-cyclic, thread-pool). In turn, each folder has this structure:
-
-```bash
-BlurrEfect*
-│   README.md
-│   Makefile
-|   analysis4.txt # Analysis performed with the tool GProc
-└───bin # Executables
-└───lib # Libraries
-└───src # Source code
+BlurGPU
+│ └───Blur
+│     └───img
+│     └───lib
+│     └───src
+│  plot_cuda.py # Script to plot the data produced in the GPU execution
+Results
+│ └───CUDA
+│ └───OMP
+│ └───POSIX
+│ └───Sequential
 ```
 
 ## Build and run
