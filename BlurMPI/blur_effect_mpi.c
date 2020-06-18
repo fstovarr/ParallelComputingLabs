@@ -78,8 +78,8 @@ int main(int argc, char *argv[]) {
         printf("Wrong arguments!\n");
         return -1;
     }
-    //struct timeval after, before, result;
-    //gettimeofday(&before, NULL);
+    struct timeval after, before, result;
+    gettimeofday(&before, NULL);
 
     //los argumentos son: direccion de entrada, direccion de salida, size del kernel, numero de hilos
     char *DIR_IMG_INPUT = argv[1];
@@ -193,11 +193,11 @@ int main(int argc, char *argv[]) {
                 }
                 //printf("start: %d - end: %d\n", chunk_start, chunk_end);
 
-                // process first chunk locally
-                chunk_data_out = malloc(chunk_lines * width * channels);
-                applyFilter(chunk_data, chunk_data_out, width, chunk_lines, channels, kernel, KERNEL_SIZE, chunk_start, chunk_end);
-                free(chunk_data);
             }
+            // process first chunk locally
+            chunk_data_out = malloc(chunk_lines * width * channels);
+            applyFilter(chunk_data, chunk_data_out, width, chunk_lines, channels, kernel, KERNEL_SIZE, chunk_start, chunk_end);
+            free(chunk_data);
         } else {
             if(verbose)printf("Error loading the image");
         }
@@ -237,6 +237,9 @@ int main(int argc, char *argv[]) {
         if(!stbi_write_png(DIR_IMG_OUTPUT, width, height, channels, output_image, width * channels))
             if(verbose)printf("Image cannot be created");
         free(output_image);
+	gettimeofday(&after, NULL);
+   	 timersub(&after, &before, &result);
+    	printf("%ld.%06ld\n", (long int) result.tv_sec, (long int) result.tv_usec);
     }
 
 
@@ -248,4 +251,5 @@ int main(int argc, char *argv[]) {
     MPI_Finalize();
     return 0;
 }
+
 

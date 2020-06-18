@@ -1,2 +1,2 @@
 mpicc blur_effect_mpi.c -o blur_effect_mpi -lm
-mpirun -np 2 blur_effect_mpi img/test4k.jpg test.png 7
+mpirun -np 8 blur_effect_mpi img/test4j.jpg test.png 7
