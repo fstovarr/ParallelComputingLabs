@@ -74,3 +74,11 @@ To perfom a test bench for single paradigm, run
 ## Run test bench (GPU)
 
 For the `BlurGPU` folder, the test bench is contained in the notebook `Blur_effect.ipynb`.
+
+## Run test bench (MPI)
+
+Execute in the `BlurMPI` folder:
+
+```bash
+./run.sh
+```
