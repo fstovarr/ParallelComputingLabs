@@ -80,5 +80,5 @@ For the `BlurGPU` folder, the test bench is contained in the notebook `Blur_effe
 Execute in the `BlurMPI` folder:
 
 ```bash
-./run.sh
+./run.sh $THREADS $IMG $OUTPUT_FILE $KERNEL
 ```
